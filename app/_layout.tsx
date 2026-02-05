@@ -4,6 +4,7 @@ import { Stack } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
 import React, { useEffect } from "react";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
+import { SafeAreaProvider } from "react-native-safe-area-context";
 import { PortfolioProvider } from "@/contexts/PortfolioContext";
 import { SubscriptionContext } from "@/contexts/SubscriptionContext";
 import { trpc, trpcClient } from "@/lib/trpc";
@@ -34,13 +35,15 @@ export default function RootLayout() {
   return (
     <trpc.Provider client={trpcClient} queryClient={queryClient}>
       <QueryClientProvider client={queryClient}>
-        <SubscriptionContext>
-          <PortfolioProvider>
-            <GestureHandlerRootView>
-              <RootLayoutNav />
-            </GestureHandlerRootView>
-          </PortfolioProvider>
-        </SubscriptionContext>
+        <SafeAreaProvider>
+          <SubscriptionContext>
+            <PortfolioProvider>
+              <GestureHandlerRootView>
+                <RootLayoutNav />
+              </GestureHandlerRootView>
+            </PortfolioProvider>
+          </SubscriptionContext>
+        </SafeAreaProvider>
       </QueryClientProvider>
     </trpc.Provider>
   );
