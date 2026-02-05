@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   View,
   Text,
@@ -6,10 +6,10 @@ import {
   ActivityIndicator,
   TouchableOpacity,
   Alert,
+  Platform,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
-import WebView from 'react-native-webview';
 import { X } from 'lucide-react-native';
 import Colors from '@/constants/colors';
 import { spacing } from '@/constants/spacing';
@@ -17,13 +17,25 @@ import { typography } from '@/constants/typography';
 import { trpc } from '@/lib/trpc';
 import { usePortfolio } from '@/contexts/PortfolioContext';
 
+declare global {
+  interface Window {
+    Plaid?: {
+      create: (config: any) => { open: () => void; destroy: () => void };
+    };
+  }
+}
+
 export default function ConnectPlaidScreen() {
   const router = useRouter();
   const { syncPlaidAccount } = usePortfolio();
   const [linkToken, setLinkToken] = useState<string | null>(null);
   const [isExchanging, setIsExchanging] = useState(false);
+  const [plaidLoaded, setPlaidLoaded] = useState(false);
+  const [plaidOpened, setPlaidOpened] = useState(false);
+  const plaidHandlerRef = React.useRef<any>(null);
 
-  const userId = 'user_' + Date.now();
+  const userIdRef = React.useRef('user_' + Date.now());
+  const userId = userIdRef.current;
 
   const createLinkTokenMutation = trpc.plaid.createLinkToken.useMutation({
     onSuccess: (data) => {
@@ -58,74 +70,73 @@ export default function ConnectPlaidScreen() {
     },
   });
 
-  React.useEffect(() => {
+  useEffect(() => {
     createLinkTokenMutation.mutate({ userId });
   }, []);
 
-  const handleWebViewMessage = (event: any) => {
-    try {
-      const message = JSON.parse(event.nativeEvent.data);
-      console.log('[ConnectPlaid] WebView message:', message.type);
+  useEffect(() => {
+    if (Platform.OS === 'web') {
+      const script = document.createElement('script');
+      script.src = 'https://cdn.plaid.com/link/v2/stable/link-initialize.js';
+      script.async = true;
+      script.onload = () => {
+        console.log('[ConnectPlaid] Plaid SDK loaded');
+        setPlaidLoaded(true);
+      };
+      script.onerror = () => {
+        console.error('[ConnectPlaid] Failed to load Plaid SDK');
+        Alert.alert('Error', 'Failed to load Plaid. Please refresh and try again.');
+      };
+      document.body.appendChild(script);
 
-      if (message.type === 'success' && message.publicToken) {
-        setIsExchanging(true);
-        exchangeTokenMutation.mutate({ publicToken: message.publicToken });
-      } else if (message.type === 'exit') {
-        router.back();
-      }
-    } catch (error) {
-      console.error('[ConnectPlaid] Error parsing message:', error);
-    }
-  };
-
-  const plaidLinkHtml = `
-    <!DOCTYPE html>
-    <html>
-    <head>
-      <meta name="viewport" content="width=device-width, initial-scale=1.0">
-      <script src="https://cdn.plaid.com/link/v2/stable/link-initialize.js"></script>
-      <style>
-        body {
-          margin: 0;
-          padding: 0;
-          font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      return () => {
+        if (document.body.contains(script)) {
+          document.body.removeChild(script);
         }
-      </style>
-    </head>
-    <body>
-      <script>
-        const linkToken = '${linkToken}';
-        
-        const handler = Plaid.create({
-          token: linkToken,
-          onSuccess: (publicToken, metadata) => {
-            console.log('Plaid success:', publicToken);
-            window.ReactNativeWebView.postMessage(JSON.stringify({
-              type: 'success',
-              publicToken: publicToken,
-              metadata: metadata
-            }));
-          },
-          onExit: (err, metadata) => {
-            console.log('Plaid exit:', err);
-            window.ReactNativeWebView.postMessage(JSON.stringify({
-              type: 'exit',
-              error: err,
-              metadata: metadata
-            }));
-          },
-          onEvent: (eventName, metadata) => {
-            console.log('Plaid event:', eventName);
-          }
-        });
+      };
+    }
+  }, []);
 
-        handler.open();
-      </script>
-    </body>
-    </html>
-  `;
+  const openPlaidLink = useCallback(() => {
+    if (Platform.OS === 'web' && linkToken && window.Plaid && !plaidOpened) {
+      console.log('[ConnectPlaid] Opening Plaid Link');
+      setPlaidOpened(true);
+      const handler = window.Plaid.create({
+        token: linkToken,
+        onSuccess: (publicToken: string, metadata: any) => {
+          console.log('[ConnectPlaid] Plaid success');
+          setIsExchanging(true);
+          exchangeTokenMutation.mutate({ publicToken });
+        },
+        onExit: (err: any, metadata: any) => {
+          console.log('[ConnectPlaid] Plaid exit:', err);
+          setPlaidOpened(false);
+          router.back();
+        },
+        onEvent: (eventName: string, metadata: any) => {
+          console.log('[ConnectPlaid] Plaid event:', eventName);
+        },
+      });
+      plaidHandlerRef.current = handler;
+      handler.open();
+    }
+  }, [linkToken, plaidOpened, exchangeTokenMutation, router]);
 
-  if (createLinkTokenMutation.isPending || !linkToken) {
+  useEffect(() => {
+    if (Platform.OS === 'web' && plaidLoaded && linkToken && !plaidOpened) {
+      openPlaidLink();
+    }
+  }, [plaidLoaded, linkToken, plaidOpened, openPlaidLink]);
+
+  useEffect(() => {
+    return () => {
+      if (plaidHandlerRef.current) {
+        plaidHandlerRef.current.destroy();
+      }
+    };
+  }, []);
+
+  if (createLinkTokenMutation.isPending || !linkToken || (Platform.OS === 'web' && !plaidLoaded)) {
     return (
       <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
         <View style={styles.header}>
@@ -168,13 +179,13 @@ export default function ConnectPlaidScreen() {
         <Text style={styles.headerTitle}>Connect Account</Text>
         <View style={styles.closeButton} />
       </View>
-      <WebView
-        source={{ html: plaidLinkHtml }}
-        onMessage={handleWebViewMessage}
-        style={styles.webview}
-        javaScriptEnabled
-        domStorageEnabled
-      />
+      <View style={styles.loadingContainer}>
+        <ActivityIndicator size="large" color={Colors.accent} />
+        <Text style={styles.loadingText}>Opening Plaid Link...</Text>
+        <TouchableOpacity style={styles.retryButton} onPress={openPlaidLink}>
+          <Text style={styles.retryButtonText}>Click here if Plaid doesn't open</Text>
+        </TouchableOpacity>
+      </View>
     </SafeAreaView>
   );
 }
@@ -213,7 +224,14 @@ const styles = StyleSheet.create({
     ...typography.body,
     color: Colors.text.secondary,
   },
-  webview: {
-    flex: 1,
+  retryButton: {
+    marginTop: spacing.md,
+    paddingVertical: spacing.sm,
+    paddingHorizontal: spacing.lg,
+  },
+  retryButtonText: {
+    ...typography.body,
+    color: Colors.accent,
+    textDecorationLine: 'underline',
   },
 });
