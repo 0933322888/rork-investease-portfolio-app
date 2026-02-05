@@ -10,6 +10,7 @@ export default {
     light: '#F0F0F0',
     medium: '#E0E0E0',
   },
+  primary: '#0066FF',
   accent: '#0066FF',
   success: '#00C853',
   error: '#FF3B30',
