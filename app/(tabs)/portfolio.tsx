@@ -1,7 +1,8 @@
 import React from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { TrendingUp, Bitcoin, Gem, Receipt, Home, Wallet, ChevronRight } from 'lucide-react-native';
+import { TrendingUp, Bitcoin, Gem, Receipt, Home, Wallet, ChevronRight, Pencil, Trash2 } from 'lucide-react-native';
+import { useRouter } from 'expo-router';
 import Colors from '@/constants/colors';
 import { spacing, borderRadius } from '@/constants/spacing';
 import { typography } from '@/constants/typography';
@@ -18,15 +19,33 @@ const ICONS = {
   Wallet,
 };
 
-function AssetItem({ asset }: { asset: Asset }) {
+interface AssetItemProps {
+  asset: Asset;
+  onEdit: (asset: Asset) => void;
+  onDelete: (asset: Asset) => void;
+}
+
+function AssetItem({ asset, onEdit, onDelete }: AssetItemProps) {
   const value = asset.quantity * asset.currentPrice;
   const cost = asset.quantity * asset.purchasePrice;
   const gain = value - cost;
   const gainPercent = cost > 0 ? (gain / cost) * 100 : 0;
   const isPositive = gain >= 0;
 
+  const handlePress = () => {
+    Alert.alert(
+      asset.name,
+      `Value: $${value.toLocaleString('en-US', { minimumFractionDigits: 2 })}`,
+      [
+        { text: 'Cancel', style: 'cancel' },
+        { text: 'Edit', onPress: () => onEdit(asset) },
+        { text: 'Delete', style: 'destructive', onPress: () => onDelete(asset) },
+      ]
+    );
+  };
+
   return (
-    <TouchableOpacity style={styles.assetItem} activeOpacity={0.7}>
+    <TouchableOpacity style={styles.assetItem} activeOpacity={0.7} onPress={handlePress}>
       <View style={styles.assetLeft}>
         <View style={styles.assetInfo}>
           <Text style={styles.assetName}>{asset.name}</Text>
@@ -46,9 +65,29 @@ function AssetItem({ asset }: { asset: Asset }) {
 }
 
 export default function PortfolioScreen() {
-  const { assetsByType } = usePortfolio();
+  const router = useRouter();
+  const { assetsByType, deleteAsset } = usePortfolio();
 
   const groupsWithAssets = ASSET_TYPES.filter((type) => assetsByType[type.id].length > 0);
+
+  const handleEditAsset = (asset: Asset) => {
+    router.push({ pathname: '/edit-asset', params: { id: asset.id } });
+  };
+
+  const handleDeleteAsset = (asset: Asset) => {
+    Alert.alert(
+      'Delete Asset',
+      `Are you sure you want to delete "${asset.name}"? This cannot be undone.`,
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Delete',
+          style: 'destructive',
+          onPress: () => deleteAsset(asset.id),
+        },
+      ]
+    );
+  };
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
@@ -89,7 +128,12 @@ export default function PortfolioScreen() {
                   </View>
                   <View style={styles.assetList}>
                     {assets.map((asset) => (
-                      <AssetItem key={asset.id} asset={asset} />
+                      <AssetItem 
+                        key={asset.id} 
+                        asset={asset} 
+                        onEdit={handleEditAsset}
+                        onDelete={handleDeleteAsset}
+                      />
                     ))}
                   </View>
                 </View>

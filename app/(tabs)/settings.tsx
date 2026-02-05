@@ -1,7 +1,7 @@
 import React from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Bell, Info, Mail, Shield, ChevronRight, Crown, Link, RefreshCw, Building2, Briefcase } from 'lucide-react-native';
+import { Bell, Info, Mail, Shield, ChevronRight, Crown, Link, RefreshCw, Building2, Briefcase, Lock, Sparkles, Trash2 } from 'lucide-react-native';
 import { useRouter } from 'expo-router';
 import Colors from '@/constants/colors';
 import { spacing, borderRadius } from '@/constants/spacing';
@@ -15,15 +15,21 @@ interface SettingItemProps {
   subtitle?: string;
   onPress: () => void;
   badge?: string;
+  locked?: boolean;
 }
 
-function SettingItem({ icon, title, subtitle, onPress, badge }: SettingItemProps) {
+function SettingItem({ icon, title, subtitle, onPress, badge, locked }: SettingItemProps) {
   return (
-    <TouchableOpacity style={styles.settingItem} onPress={onPress} activeOpacity={0.7}>
+    <TouchableOpacity 
+      style={[styles.settingItem, locked && styles.settingItemLocked]} 
+      onPress={locked ? undefined : onPress} 
+      activeOpacity={locked ? 1 : 0.7}
+      disabled={locked}
+    >
       <View style={styles.settingLeft}>
-        <View style={styles.settingIconContainer}>{icon}</View>
+        <View style={[styles.settingIconContainer, locked && styles.settingIconLocked]}>{icon}</View>
         <View style={styles.settingContent}>
-          <Text style={styles.settingTitle}>{title}</Text>
+          <Text style={[styles.settingTitle, locked && styles.settingTitleLocked]}>{title}</Text>
           {subtitle && <Text style={styles.settingSubtitle}>{subtitle}</Text>}
         </View>
       </View>
@@ -33,7 +39,11 @@ function SettingItem({ icon, title, subtitle, onPress, badge }: SettingItemProps
             <Text style={styles.badgeText}>{badge}</Text>
           </View>
         )}
-        <ChevronRight size={20} color={Colors.text.tertiary} />
+        {locked ? (
+          <Lock size={18} color={Colors.text.tertiary} />
+        ) : (
+          <ChevronRight size={20} color={Colors.text.tertiary} />
+        )}
       </View>
     </TouchableOpacity>
   );
@@ -41,8 +51,8 @@ function SettingItem({ icon, title, subtitle, onPress, badge }: SettingItemProps
 
 export default function SettingsScreen() {
   const router = useRouter();
-  const { plaidAccounts, refreshPlaidBalances } = usePortfolio();
-  const { isPremium, isLoading: isSubscriptionLoading } = useSubscription();
+  const { plaidAccounts, refreshPlaidBalances, removeAllPlaidAccounts } = usePortfolio();
+  const { isPremium } = useSubscription();
   const [isRefreshing, setIsRefreshing] = React.useState(false);
 
   const handleConnectBank = () => {
@@ -73,8 +83,26 @@ export default function SettingsScreen() {
     }
   };
 
+  const handleRemoveConnections = () => {
+    Alert.alert(
+      'Remove All Connections',
+      'Are you sure you want to remove all connected accounts? This cannot be undone.',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Remove All',
+          style: 'destructive',
+          onPress: async () => {
+            await removeAllPlaidAccounts();
+            Alert.alert('Success', 'All connections removed');
+          },
+        },
+      ]
+    );
+  };
+
   const handleUpgrade = () => {
-    router.push('/premium');
+    Alert.alert('Premium', 'Upgrade to premium to unlock advanced insights and analytics');
   };
 
   const handleNotifications = () => {
@@ -100,40 +128,46 @@ export default function SettingsScreen() {
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
-        {!isPremium && (
-          <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Subscription</Text>
-            <View style={styles.settingGroup}>
-              <SettingItem
-                icon={<Crown size={22} color={Colors.accent} strokeWidth={2} />}
-                title="Upgrade to Premium"
-                subtitle="Unlock Plaid & SnapTrade integrations"
-                onPress={handleUpgrade}
-                badge="Pro"
-              />
-            </View>
-          </View>
-        )}
-
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Connected Accounts</Text>
+          <Text style={styles.sectionTitle}>Subscription</Text>
           <View style={styles.settingGroup}>
             <SettingItem
-              icon={<Building2 size={22} color={Colors.accent} strokeWidth={2} />}
+              icon={<Crown size={22} color={Colors.accent} strokeWidth={2} />}
+              title="Upgrade to Premium"
+              subtitle="Unlock advanced insights"
+              onPress={handleUpgrade}
+              badge="Pro"
+            />
+          </View>
+        </View>
+
+        <View style={styles.section}>
+          <View style={styles.sectionTitleRow}>
+            <Text style={[styles.sectionTitle, styles.sectionTitleInRow]}>Connected Accounts</Text>
+            {!isPremium && (
+              <View style={styles.premiumBadge}>
+                <Sparkles size={14} color={Colors.accent} strokeWidth={2} />
+                <Text style={styles.premiumBadgeText}>Premium</Text>
+              </View>
+            )}
+          </View>
+          <View style={styles.settingGroup}>
+            <SettingItem
+              icon={<Building2 size={22} color={!isPremium ? Colors.text.tertiary : Colors.accent} strokeWidth={2} />}
               title="Connect Bank (Plaid)"
-              subtitle={isPremium ? "Link bank accounts for balance tracking" : "Premium feature"}
+              subtitle="Link bank accounts for balance tracking"
               onPress={handleConnectBank}
-              badge={!isPremium ? "Premium" : undefined}
+              locked={!isPremium}
             />
             <View style={styles.separator} />
             <SettingItem
-              icon={<Briefcase size={22} color={Colors.primary} strokeWidth={2} />}
+              icon={<Briefcase size={22} color={!isPremium ? Colors.text.tertiary : Colors.primary} strokeWidth={2} />}
               title="Connect Brokerage (SnapTrade)"
-              subtitle={isPremium ? "Alpaca, Webull, Trading 212 & more" : "Premium feature"}
+              subtitle="Alpaca, Webull, Trading 212 & more"
               onPress={handleConnectBrokerage}
-              badge={!isPremium ? "Premium" : undefined}
+              locked={!isPremium}
             />
-            {plaidAccounts.length > 0 && (
+            {plaidAccounts.length > 0 && isPremium && (
               <>
                 <View style={styles.separator} />
                 <SettingItem
@@ -147,6 +181,13 @@ export default function SettingsScreen() {
                   title="Refresh Balances"
                   subtitle={`${plaidAccounts.length} account${plaidAccounts.length > 1 ? 's' : ''} connected`}
                   onPress={handleRefreshBalances}
+                />
+                <View style={styles.separator} />
+                <SettingItem
+                  icon={<Trash2 size={22} color={Colors.error} strokeWidth={2} />}
+                  title="Remove All Connections"
+                  subtitle="Disconnect all linked accounts"
+                  onPress={handleRemoveConnections}
                 />
               </>
             )}
@@ -222,6 +263,31 @@ const styles = StyleSheet.create({
     marginBottom: spacing.md,
     paddingHorizontal: spacing.xs,
   },
+  sectionTitleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+    marginBottom: spacing.md,
+  },
+  sectionTitleInRow: {
+    marginBottom: 0,
+  },
+  premiumBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs,
+    backgroundColor: Colors.card,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.xs,
+    borderRadius: borderRadius.full,
+    borderWidth: 1,
+    borderColor: Colors.border.light,
+  },
+  premiumBadgeText: {
+    ...typography.footnote,
+    color: Colors.accent,
+    fontWeight: '600' as const,
+  },
   settingGroup: {
     backgroundColor: Colors.card,
     borderRadius: borderRadius.lg,
@@ -260,6 +326,16 @@ const styles = StyleSheet.create({
     ...typography.callout,
     color: Colors.text.primary,
     fontWeight: '600' as const,
+  },
+  settingTitleLocked: {
+    color: Colors.text.tertiary,
+  },
+  settingItemLocked: {
+    opacity: 0.7,
+    pointerEvents: 'none',
+  },
+  settingIconLocked: {
+    backgroundColor: Colors.border.light,
   },
   settingSubtitle: {
     ...typography.footnote,

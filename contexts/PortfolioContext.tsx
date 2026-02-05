@@ -518,6 +518,25 @@ export const [PortfolioProvider, usePortfolio] = createContextHook(() => {
     return allocation;
   }, [assets]);
 
+  const removePlaidAccount = async (accountId: string) => {
+    const updatedPlaidAccounts = plaidAccounts.filter((a) => a.id !== accountId);
+    setPlaidAccounts(updatedPlaidAccounts);
+    savePlaidAccountsMutation.mutate(updatedPlaidAccounts);
+
+    const updatedAssets = assets.filter((a) => !a.plaidAccountId || `plaid_${a.plaidAccountId}` !== accountId);
+    setAssets(updatedAssets);
+    saveAssetsMutation.mutate(updatedAssets);
+  };
+
+  const removeAllPlaidAccounts = async () => {
+    setPlaidAccounts([]);
+    savePlaidAccountsMutation.mutate([]);
+
+    const updatedAssets = assets.filter((a) => !a.isPlaidConnected);
+    setAssets(updatedAssets);
+    saveAssetsMutation.mutate(updatedAssets);
+  };
+
   return {
     assets,
     addAsset,
@@ -536,5 +555,7 @@ export const [PortfolioProvider, usePortfolio] = createContextHook(() => {
     syncPlaidAccount,
     refreshPlaidBalances,
     syncSnapTradeAccount,
+    removePlaidAccount,
+    removeAllPlaidAccounts,
   };
 });

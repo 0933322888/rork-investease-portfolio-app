@@ -1,8 +1,7 @@
-import { Platform } from 'react-native';
 import createContextHook from '@nkzw/create-context-hook';
 
 export const [SubscriptionContext, useSubscription] = createContextHook(() => {
-  const isPremium = Platform.OS === 'web' ? true : false;
+  const isPremium = false;
   const isLoading = false;
 
   return {
