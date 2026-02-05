@@ -5,6 +5,7 @@ import * as SplashScreen from "expo-splash-screen";
 import React, { useEffect } from "react";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { PortfolioProvider } from "@/contexts/PortfolioContext";
+import { SubscriptionContext } from "@/contexts/SubscriptionContext";
 import { trpc, trpcClient } from "@/lib/trpc";
 
 // Prevent the splash screen from auto-hiding before asset loading is complete.
@@ -20,6 +21,7 @@ function RootLayoutNav() {
       <Stack.Screen name="add-asset" options={{ presentation: "modal", headerShown: false }} />
       <Stack.Screen name="risk-fingerprint" options={{ presentation: "modal", headerShown: false }} />
       <Stack.Screen name="connect-plaid" options={{ presentation: "modal", title: "Connect Account" }} />
+      <Stack.Screen name="premium" options={{ presentation: "modal", headerShown: false }} />
     </Stack>
   );
 }
@@ -32,11 +34,13 @@ export default function RootLayout() {
   return (
     <trpc.Provider client={trpcClient} queryClient={queryClient}>
       <QueryClientProvider client={queryClient}>
-        <PortfolioProvider>
-          <GestureHandlerRootView>
-            <RootLayoutNav />
-          </GestureHandlerRootView>
-        </PortfolioProvider>
+        <SubscriptionContext>
+          <PortfolioProvider>
+            <GestureHandlerRootView>
+              <RootLayoutNav />
+            </GestureHandlerRootView>
+          </PortfolioProvider>
+        </SubscriptionContext>
       </QueryClientProvider>
     </trpc.Provider>
   );
