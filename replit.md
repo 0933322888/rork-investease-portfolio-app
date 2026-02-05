@@ -60,23 +60,27 @@ The app builds and serves automatically. The workflow:
 - `bun run server` - Run just the server (requires pre-built dist/)
 
 ### Environment Variables
-The app uses Plaid for financial account linking. Required secrets:
+The app uses Plaid and SnapTrade for financial account linking. Required secrets:
 - `PLAID_CLIENT_ID` - Plaid API client ID
 - `PLAID_SECRET` - Plaid API secret
+- `SNAPTRADE_CLIENT_ID` - SnapTrade API client ID
+- `SNAPTRADE_CONSUMER_KEY` - SnapTrade API consumer key
 
 ## API Endpoints
 - `GET /api/health` - Health check
-- `/api/trpc/*` - tRPC endpoints (Plaid integration)
+- `/api/trpc/*` - tRPC endpoints (Plaid and SnapTrade integrations)
 
 ## Key Features
 - Portfolio tracking for multiple asset types
 - Real-time balance updates
 - Risk fingerprint assessment
-- Plaid integration for bank/investment account linking
+- Plaid integration for bank account linking
+- SnapTrade integration for brokerage connections (Alpaca, Webull, Trading 212, etc.)
 - Onboarding flow
 - Tab-based navigation (Home, Portfolio, Insights, Settings)
 
 ## Recent Changes
+- Added SnapTrade integration for brokerage account connections
 - Configured for Replit deployment
 - Using static export for web instead of dev server (file watcher limitations)
 - Combined backend API with static file serving on port 5000
