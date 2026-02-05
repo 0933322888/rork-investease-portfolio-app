@@ -33,6 +33,7 @@ export default function AddAssetScreen() {
   const [selectedType, setSelectedType] = useState<AssetType | null>(null);
   const [symbol, setSymbol] = useState('');
   const [purchasePrice, setPurchasePrice] = useState('');
+  const [address, setAddress] = useState('');
   const [quantity, setQuantity] = useState('');
   const [monthlyRent, setMonthlyRent] = useState('');
   const [monthlyIncome, setMonthlyIncome] = useState('');
@@ -52,6 +53,7 @@ export default function AddAssetScreen() {
       name: '',
       symbol: undefined as string | undefined,
       quantity: 0,
+      address: undefined as string | undefined,
       purchasePrice: 0,
       currentPrice: 0,
       currency: 'USD',
@@ -82,6 +84,7 @@ export default function AddAssetScreen() {
       const mockCurrentPrice = parseFloat(purchasePrice) * (1 + (Math.random() * 0.05));
       baseAsset.name = symbol;
       baseAsset.quantity = 1;
+      baseAsset.address = address;
       baseAsset.purchasePrice = parseFloat(purchasePrice);
       baseAsset.currentPrice = parseFloat(mockCurrentPrice.toFixed(2));
       baseAsset.monthlyRent = parseFloat(monthlyRent);
@@ -281,6 +284,18 @@ export default function AddAssetScreen() {
                       value={symbol}
                       onChangeText={setSymbol}
                       placeholder="Downtown Apartment"
+                      placeholderTextColor={Colors.text.tertiary}
+                      autoFocus
+                      returnKeyType="next"
+                    />
+                  </View>
+                  <View style={styles.formGroup}>
+                    <Text style={styles.formLabel}>Address</Text>
+                    <TextInput
+                      style={styles.inputLarge}
+                      value={address}
+                      onChangeText={setAddress}
+                      placeholder="123 Central Ave, New York, NY"
                       placeholderTextColor={Colors.text.tertiary}
                       autoFocus
                       returnKeyType="next"

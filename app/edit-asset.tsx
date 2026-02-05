@@ -20,10 +20,11 @@ import { usePortfolio } from '@/contexts/PortfolioContext';
 export default function EditAssetScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const { assets, updateAsset } = usePortfolio();
-  
+
   const asset = assets.find((a) => a.id === id);
-  
+
   const [name, setName] = useState('');
+  const [address, setAddress] = useState('')
   const [symbol, setSymbol] = useState('');
   const [purchasePrice, setPurchasePrice] = useState('');
   const [currentPrice, setCurrentPrice] = useState('');
@@ -33,6 +34,7 @@ export default function EditAssetScreen() {
     if (asset) {
       setName(asset.name || '');
       setSymbol(asset.symbol || '');
+      setAddress(asset.address || '');
       setPurchasePrice(asset.purchasePrice?.toString() || '');
       setCurrentPrice(asset.currentPrice?.toString() || '');
       setQuantity(asset.quantity?.toString() || '');
@@ -59,6 +61,7 @@ export default function EditAssetScreen() {
   const handleSubmit = () => {
     updateAsset(asset.id, {
       name: name.trim() || asset.name,
+      address: address.trim() || undefined,
       symbol: symbol.trim() || undefined,
       purchasePrice: parseFloat(purchasePrice) || asset.purchasePrice,
       currentPrice: parseFloat(currentPrice) || asset.currentPrice,
@@ -67,8 +70,8 @@ export default function EditAssetScreen() {
     router.back();
   };
 
-  const isFormValid = name.trim() !== '' && 
-    !isNaN(parseFloat(purchasePrice)) && 
+  const isFormValid = name.trim() !== '' &&
+    !isNaN(parseFloat(purchasePrice)) &&
     !isNaN(parseFloat(quantity));
 
   return (
@@ -86,7 +89,7 @@ export default function EditAssetScreen() {
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         keyboardVerticalOffset={100}
       >
-        <ScrollView 
+        <ScrollView
           style={styles.scrollView}
           contentContainerStyle={styles.scrollContent}
           showsVerticalScrollIndicator={false}
@@ -103,17 +106,38 @@ export default function EditAssetScreen() {
               />
             </View>
 
-            <View style={styles.inputGroup}>
-              <Text style={styles.label}>Symbol (optional)</Text>
-              <TextInput
-                style={styles.input}
-                value={symbol}
-                onChangeText={setSymbol}
-                placeholder="e.g., AAPL, BTC"
-                placeholderTextColor={Colors.text.tertiary}
-                autoCapitalize="characters"
-              />
-            </View>
+            {asset.type === 'real-estate' && (
+              <View style={styles.inputGroup}>
+                <Text style={styles.label}>Address</Text>
+                <TextInput
+                  style={styles.input}
+                  value={address}
+                  onChangeText={setAddress}
+                  placeholder="e.g., 123 Main St, New York, NY"
+                  placeholderTextColor={Colors.text.tertiary}
+                  autoCorrect={false}
+                  autoComplete="street-address"
+                  textContentType="fullStreetAddress"
+                  keyboardType="default"
+                  multiline={true}
+                  numberOfLines={2}
+                />
+              </View>
+            )}
+
+            {(asset.type === 'stocks' || asset.type === 'crypto') && (
+              <View style={styles.inputGroup}>
+                <Text style={styles.label}>Symbol</Text>
+                <TextInput
+                  style={styles.input}
+                  value={symbol}
+                  onChangeText={setSymbol}
+                  placeholder="e.g., AAPL, BTC"
+                  placeholderTextColor={Colors.text.tertiary}
+                  autoCapitalize="characters"
+                />
+              </View>
+            )}
 
             <View style={styles.inputGroup}>
               <Text style={styles.label}>Purchase Price</Text>

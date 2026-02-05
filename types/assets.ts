@@ -4,6 +4,7 @@ export interface Asset {
   id: string;
   type: AssetType;
   name: string;
+  address?: string;
   symbol?: string;
   quantity: number;
   purchasePrice: number;
