@@ -342,7 +342,7 @@ export const [PortfolioProvider, usePortfolio] = createContextHook(() => {
     for (const plaidAccount of plaidAccounts) {
       try {
         const balancesResponse = await fetch(
-          `${process.env.EXPO_PUBLIC_RORK_API_BASE_URL}/api/trpc/plaid.getBalances?input=${encodeURIComponent(
+          `/api/trpc/plaid.getBalances?input=${encodeURIComponent(
             JSON.stringify({ json: { accessToken: plaidAccount.accessToken } })
           )}`
         );
@@ -372,6 +372,104 @@ export const [PortfolioProvider, usePortfolio] = createContextHook(() => {
     }
     
     console.log('[Portfolio] Balances refreshed');
+  };
+
+  const syncSnapTradeAccount = async (userId: string, userSecret: string) => {
+    console.log('[Portfolio] Syncing SnapTrade account for user:', userId);
+    
+    try {
+      const accountsResponse = await fetch(
+        `/api/trpc/snaptrade.listAccounts?input=${encodeURIComponent(
+          JSON.stringify({ json: { userId, userSecret } })
+        )}`
+      );
+      const accountsData = await accountsResponse.json();
+      
+      if (!accountsData.result?.data?.json?.accounts) {
+        throw new Error('No accounts found. Please connect a brokerage first.');
+      }
+      
+      const accounts = accountsData.result.data.json.accounts;
+      console.log('[Portfolio] SnapTrade accounts:', accounts.length);
+
+      const holdingsResponse = await fetch(
+        `/api/trpc/snaptrade.getHoldings?input=${encodeURIComponent(
+          JSON.stringify({ json: { userId, userSecret } })
+        )}`
+      );
+      const holdingsData = await holdingsResponse.json();
+      const holdings = holdingsData.result?.data?.json?.holdings || [];
+      
+      console.log('[Portfolio] SnapTrade holdings fetched');
+
+      const newAssets: Asset[] = [];
+      
+      for (const account of accounts) {
+        const accountHoldings = holdings.filter(
+          (h: any) => h.account?.id === account.id
+        );
+        
+        for (const holding of accountHoldings) {
+          if (holding.symbol && holding.units > 0) {
+            const price = holding.price || holding.average_purchase_price || 0;
+            const assetType: AssetType = holding.symbol.type === 'crypto' ? 'crypto' : 'stocks';
+            
+            newAssets.push({
+              id: `snaptrade_${account.id}_${holding.symbol.id || holding.symbol.symbol}`,
+              type: assetType,
+              name: holding.symbol.description || holding.symbol.symbol,
+              symbol: holding.symbol.symbol,
+              quantity: holding.units,
+              purchasePrice: holding.average_purchase_price || price,
+              currentPrice: price,
+              purchaseDate: new Date().toISOString(),
+              currency: holding.symbol.currency?.code || 'USD',
+              snaptradeAccountId: account.id,
+            });
+          }
+        }
+
+        if (accountHoldings.length === 0) {
+          const balancesResponse = await fetch(
+            `/api/trpc/snaptrade.getAccountBalances?input=${encodeURIComponent(
+              JSON.stringify({ json: { userId, userSecret, accountId: account.id } })
+            )}`
+          );
+          const balancesData = await balancesResponse.json();
+          const balances = balancesData.result?.data?.json?.balances || [];
+          
+          for (const balance of balances) {
+            if (balance.cash && balance.cash > 0) {
+              newAssets.push({
+                id: `snaptrade_cash_${account.id}_${balance.currency?.code || 'USD'}`,
+                type: 'cash',
+                name: `${account.name || 'Brokerage'} Cash`,
+                symbol: balance.currency?.code || 'USD',
+                quantity: balance.cash,
+                purchasePrice: 1,
+                currentPrice: 1,
+                purchaseDate: new Date().toISOString(),
+                currency: balance.currency?.code || 'USD',
+                snaptradeAccountId: account.id,
+              });
+            }
+          }
+        }
+      }
+
+      if (newAssets.length > 0) {
+        const existingNonSnapTrade = assets.filter(a => !a.snaptradeAccountId);
+        const updatedAssets = [...existingNonSnapTrade, ...newAssets];
+        setAssets(updatedAssets);
+        saveAssetsMutation.mutate(updatedAssets);
+        console.log('[Portfolio] SnapTrade assets added:', newAssets.length);
+      } else {
+        console.log('[Portfolio] No holdings found in SnapTrade accounts');
+      }
+    } catch (error) {
+      console.error('[Portfolio] Error syncing SnapTrade account:', error);
+      throw error;
+    }
   };
 
   const totalValue = useMemo(() => {
@@ -437,5 +535,6 @@ export const [PortfolioProvider, usePortfolio] = createContextHook(() => {
     plaidAccounts,
     syncPlaidAccount,
     refreshPlaidBalances,
+    syncSnapTradeAccount,
   };
 });

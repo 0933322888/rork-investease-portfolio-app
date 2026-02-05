@@ -9,7 +9,8 @@ export interface Asset {
   purchasePrice: number;
   currentPrice: number;
   currency: string;
-  addedAt: number;
+  addedAt?: number;
+  purchaseDate?: string;
   monthlyRent?: number;
   monthlyIncome?: number;
   dueDate?: string;
@@ -17,6 +18,7 @@ export interface Asset {
   plaidAccountId?: string;
   plaidItemId?: string;
   isPlaidConnected?: boolean;
+  snaptradeAccountId?: string;
 }
 
 export interface AssetTypeInfo {

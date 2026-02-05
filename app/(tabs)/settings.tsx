@@ -1,7 +1,7 @@
 import React from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Bell, Info, Mail, Shield, ChevronRight, Crown, Link, RefreshCw } from 'lucide-react-native';
+import { Bell, Info, Mail, Shield, ChevronRight, Crown, Link, RefreshCw, Building2, Briefcase } from 'lucide-react-native';
 import { useRouter } from 'expo-router';
 import Colors from '@/constants/colors';
 import { spacing, borderRadius } from '@/constants/spacing';
@@ -43,8 +43,12 @@ export default function SettingsScreen() {
   const { plaidAccounts, refreshPlaidBalances } = usePortfolio();
   const [isRefreshing, setIsRefreshing] = React.useState(false);
 
-  const handleConnectAccount = () => {
+  const handleConnectBank = () => {
     router.push('/connect-plaid');
+  };
+
+  const handleConnectBrokerage = () => {
+    router.push('/connect-snaptrade');
   };
 
   const handleRefreshBalances = async () => {
@@ -103,10 +107,17 @@ export default function SettingsScreen() {
           <Text style={styles.sectionTitle}>Connected Accounts</Text>
           <View style={styles.settingGroup}>
             <SettingItem
-              icon={<Link size={22} color={Colors.accent} strokeWidth={2} />}
-              title="Connect Account"
-              subtitle="Link bank or brokerage account"
-              onPress={handleConnectAccount}
+              icon={<Building2 size={22} color={Colors.accent} strokeWidth={2} />}
+              title="Connect Bank (Plaid)"
+              subtitle="Link bank accounts for balance tracking"
+              onPress={handleConnectBank}
+            />
+            <View style={styles.separator} />
+            <SettingItem
+              icon={<Briefcase size={22} color={Colors.primary} strokeWidth={2} />}
+              title="Connect Brokerage (SnapTrade)"
+              subtitle="Alpaca, Webull, Trading 212 & more"
+              onPress={handleConnectBrokerage}
             />
             {plaidAccounts.length > 0 && (
               <>
