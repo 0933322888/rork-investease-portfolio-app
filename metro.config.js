@@ -1,6 +1,22 @@
 const { getDefaultConfig } = require("expo/metro-config");
-const { withRorkMetro } = require("@rork-ai/toolkit-sdk/metro");
+const path = require("path");
 
 const config = getDefaultConfig(__dirname);
 
-module.exports = withRorkMetro(config);
+config.watchFolders = [__dirname];
+config.watcher = {
+  additionalExts: ['mjs', 'cjs'],
+  watchman: {
+    deferStates: ['hg.update'],
+  },
+  healthCheck: {
+    enabled: true,
+  },
+};
+
+config.resolver.blockList = [
+  /\.cache\/.*/,
+  /\.git\/.*/,
+];
+
+module.exports = config;

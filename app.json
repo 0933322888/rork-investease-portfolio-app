@@ -25,7 +25,9 @@
       "package": "app.rork.invease_portfolio_app"
     },
     "web": {
-      "favicon": "./assets/images/favicon.png"
+      "favicon": "./assets/images/favicon.png",
+      "output": "single",
+      "bundler": "metro"
     },
     "plugins": [
       [

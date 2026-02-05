@@ -43,3 +43,11 @@ yarn-error.*
 .env
 rork-eslint.config.js
 core
+
+# Bun
+.cache/
+bun.lockb
+
+# Replit
+.replit
+.local/
