@@ -210,6 +210,7 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     padding: spacing.lg,
+    paddingTop: 60,
   },
   section: {
     marginBottom: spacing.xl,
