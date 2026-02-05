@@ -7,7 +7,6 @@ import Colors from '@/constants/colors';
 import { spacing, borderRadius } from '@/constants/spacing';
 import { typography } from '@/constants/typography';
 import { usePortfolio } from '@/contexts/PortfolioContext';
-import { useSubscription } from '@/contexts/SubscriptionContext';
 
 interface SettingItemProps {
   icon: React.ReactNode;
@@ -42,22 +41,13 @@ function SettingItem({ icon, title, subtitle, onPress, badge }: SettingItemProps
 export default function SettingsScreen() {
   const router = useRouter();
   const { plaidAccounts, refreshPlaidBalances } = usePortfolio();
-  const { isPremium, isLoading: isSubscriptionLoading } = useSubscription();
   const [isRefreshing, setIsRefreshing] = React.useState(false);
 
   const handleConnectBank = () => {
-    if (!isPremium) {
-      router.push('/premium');
-      return;
-    }
     router.push('/connect-plaid');
   };
 
   const handleConnectBrokerage = () => {
-    if (!isPremium) {
-      router.push('/premium');
-      return;
-    }
     router.push('/connect-snaptrade');
   };
 
@@ -74,7 +64,7 @@ export default function SettingsScreen() {
   };
 
   const handleUpgrade = () => {
-    router.push('/premium');
+    Alert.alert('Premium', 'Upgrade to premium to unlock advanced insights and analytics');
   };
 
   const handleNotifications = () => {
@@ -100,20 +90,18 @@ export default function SettingsScreen() {
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
-        {!isPremium && (
-          <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Subscription</Text>
-            <View style={styles.settingGroup}>
-              <SettingItem
-                icon={<Crown size={22} color={Colors.accent} strokeWidth={2} />}
-                title="Upgrade to Premium"
-                subtitle="Unlock Plaid & SnapTrade integrations"
-                onPress={handleUpgrade}
-                badge="Pro"
-              />
-            </View>
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Subscription</Text>
+          <View style={styles.settingGroup}>
+            <SettingItem
+              icon={<Crown size={22} color={Colors.accent} strokeWidth={2} />}
+              title="Upgrade to Premium"
+              subtitle="Unlock advanced insights"
+              onPress={handleUpgrade}
+              badge="Pro"
+            />
           </View>
-        )}
+        </View>
 
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Connected Accounts</Text>
@@ -121,17 +109,15 @@ export default function SettingsScreen() {
             <SettingItem
               icon={<Building2 size={22} color={Colors.accent} strokeWidth={2} />}
               title="Connect Bank (Plaid)"
-              subtitle={isPremium ? "Link bank accounts for balance tracking" : "Premium feature"}
+              subtitle="Link bank accounts for balance tracking"
               onPress={handleConnectBank}
-              badge={!isPremium ? "Premium" : undefined}
             />
             <View style={styles.separator} />
             <SettingItem
               icon={<Briefcase size={22} color={Colors.primary} strokeWidth={2} />}
               title="Connect Brokerage (SnapTrade)"
-              subtitle={isPremium ? "Alpaca, Webull, Trading 212 & more" : "Premium feature"}
+              subtitle="Alpaca, Webull, Trading 212 & more"
               onPress={handleConnectBrokerage}
-              badge={!isPremium ? "Premium" : undefined}
             />
             {plaidAccounts.length > 0 && (
               <>
