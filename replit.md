@@ -80,7 +80,19 @@ The app uses Plaid and SnapTrade for financial account linking. Required secrets
 - Tab-based navigation (Home, Portfolio, Insights, Settings)
 
 ## Recent Changes
+- **UI Design Improvements (Feb 2026)**:
+  - Added portfolio summary card at top of Portfolio page showing total value, gain/loss with percentage pill, and asset count
+  - Added asset type icons (stocks, crypto, real estate, etc.) for visual recognition
+  - Added mini sparkline charts (7-day trend) next to each asset in green/red
+  - Improved asset items with edit/delete functionality via tap menu
+- Premium gating for Connected Accounts section (Settings) and Insights page
 - Added SnapTrade integration for brokerage account connections
 - Configured for Replit deployment
 - Using static export for web instead of dev server (file watcher limitations)
 - Combined backend API with static file serving on port 5000
+
+## Design Notes
+- **Color Scheme**: Blue accent (#007AFF), green for gains (#34C759), red for losses (#FF3B30)
+- **Premium Badge**: Sparkles icon with pill shape, white background with subtle border
+- **Locked Items**: Use opacity 0.7 and lock icons to indicate premium-only features
+- **Charts**: SVG-based line charts with gradient fills and data point markers
