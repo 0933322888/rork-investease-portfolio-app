@@ -263,7 +263,7 @@ export const [PortfolioProvider, usePortfolio] = createContextHook(() => {
     
     try {
       const accountsResponse = await fetch(
-        `${process.env.EXPO_PUBLIC_RORK_API_BASE_URL}/api/trpc/plaid.getAccounts?input=${encodeURIComponent(
+        `/api/trpc/plaid.getAccounts?input=${encodeURIComponent(
           JSON.stringify({ json: { accessToken } })
         )}`
       );
@@ -273,7 +273,7 @@ export const [PortfolioProvider, usePortfolio] = createContextHook(() => {
       console.log('[Portfolio] Fetched accounts:', accounts.length);
 
       const balancesResponse = await fetch(
-        `${process.env.EXPO_PUBLIC_RORK_API_BASE_URL}/api/trpc/plaid.getBalances?input=${encodeURIComponent(
+        `/api/trpc/plaid.getBalances?input=${encodeURIComponent(
           JSON.stringify({ json: { accessToken } })
         )}`
       );
