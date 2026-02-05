@@ -72,7 +72,7 @@ export default function EditAssetScreen() {
 
   const isFormValid = name.trim() !== '' &&
     !isNaN(parseFloat(purchasePrice)) &&
-    !isNaN(parseFloat(quantity));
+    (asset.type === 'real-estate' || !isNaN(parseFloat(quantity)));
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
@@ -163,17 +163,19 @@ export default function EditAssetScreen() {
               />
             </View>
 
-            <View style={styles.inputGroup}>
-              <Text style={styles.label}>Quantity</Text>
-              <TextInput
-                style={styles.input}
-                value={quantity}
-                onChangeText={setQuantity}
-                placeholder="0"
-                placeholderTextColor={Colors.text.tertiary}
-                keyboardType="decimal-pad"
-              />
-            </View>
+            {asset.type !== 'real-estate' && (
+              <View style={styles.inputGroup}>
+                <Text style={styles.label}>Quantity</Text>
+                <TextInput
+                  style={styles.input}
+                  value={quantity}
+                  onChangeText={setQuantity}
+                  placeholder="0"
+                  placeholderTextColor={Colors.text.tertiary}
+                  keyboardType="decimal-pad"
+                />
+              </View>
+            )}
           </View>
         </ScrollView>
 
