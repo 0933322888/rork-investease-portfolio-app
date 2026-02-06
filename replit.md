@@ -77,14 +77,24 @@ The app uses Plaid and SnapTrade for financial account linking. Required secrets
 - Plaid integration for bank account linking
 - SnapTrade integration for brokerage connections (Alpaca, Webull, Trading 212, etc.)
 - Onboarding flow
-- Tab-based navigation (Home, Portfolio, Insights, Settings)
+- 5-tab navigation (Home, Portfolio, + Add, Insights, Settings) with centered floating Add button
 
 ## Recent Changes
-- **Home Page Redesign (Feb 2026)**:
-  - Greeting header with time-based salutation and date
-  - Dark-themed Net Worth card with total value, gain/loss, and green line chart
-  - Allocation card with SVG donut chart and percentage/dollar legend
-  - Portfolio Health score card (0-100) with status, category pills, "Improve my portfolio" button
+- **Dark Mode Redesign (Feb 2026)**:
+  - Switched entire app to dark-first color scheme (#0D0D14 background, #1A1A2E cards)
+  - Updated all screens (home, portfolio, insights, settings, modals) for dark mode
+  - Fixed all Colors.card text references to #FFFFFF for proper contrast
+  - Updated onboarding gradients to dark-themed palettes
+- **5-Tab Navigation (Feb 2026)**:
+  - Added centered floating + Add Asset button in tab bar
+  - 5 tabs: Home, Portfolio, + (floating), Insights, Settings
+  - Tab bar uses #111122 background with subtle border
+- **Home Page Premium Redesign (Feb 2026)**:
+  - Greeting header with time-based salutation, full date, and tappable avatar
+  - Glass/gradient Net Worth card with blue glow effect, percentage pill, tappable to portfolio
+  - "7D" label on sparkline chart
+  - Allocation donut chart with tappable category rows linking to portfolio
+  - Portfolio Health score with progress gauge bar
   - Connected Accounts horizontal scroll with per-type cards and "Add account" button
   - Insights section with icon-prefixed actionable items
 - **UI Design Improvements (Feb 2026)**:
@@ -99,7 +109,10 @@ The app uses Plaid and SnapTrade for financial account linking. Required secrets
 - Combined backend API with static file serving on port 5000
 
 ## Design Notes
+- **Theme**: Dark mode first (#0D0D14 background, #1A1A2E card, #22223A elevated card)
 - **Color Scheme**: Blue accent (#007AFF), green for gains (#34C759), red for losses (#FF3B30)
-- **Premium Badge**: Sparkles icon with pill shape, white background with subtle border
+- **Text Colors**: White primary, rgba(255,255,255,0.6) secondary, rgba(255,255,255,0.35) tertiary
+- **Premium Badge**: Sparkles icon with pill shape
 - **Locked Items**: Use opacity 0.7 and lock icons to indicate premium-only features
 - **Charts**: SVG-based line charts with gradient fills and data point markers
+- **Cards**: 20px border radius, subtle borders (rgba(255,255,255,0.08))

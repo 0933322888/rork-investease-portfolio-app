@@ -354,7 +354,7 @@ const styles = StyleSheet.create({
   },
   badgeText: {
     ...typography.caption,
-    color: Colors.card,
+    color: '#FFFFFF',
     fontWeight: '700' as const,
   },
   separator: {

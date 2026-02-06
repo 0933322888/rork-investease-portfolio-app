@@ -438,7 +438,7 @@ export default function AddAssetScreen() {
               disabled={!isFormValid}
               activeOpacity={0.8}
             >
-              <Check size={20} color={Colors.card} />
+              <Check size={20} color="#FFFFFF" />
               <Text style={styles.buttonText}>Add Asset</Text>
             </TouchableOpacity>
           </View>
@@ -578,7 +578,7 @@ const styles = StyleSheet.create({
   },
   buttonText: {
     ...typography.headline,
-    color: Colors.card,
+    color: '#FFFFFF',
   },
   noteContainer: {
     backgroundColor: Colors.background,

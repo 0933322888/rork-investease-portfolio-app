@@ -230,7 +230,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   checkmarkText: {
-    color: Colors.card,
+    color: '#FFFFFF',
     fontSize: 14,
     fontWeight: '700' as const,
   },
@@ -253,12 +253,11 @@ const styles = StyleSheet.create({
   },
   upgradeButtonText: {
     ...typography.headline,
-    color: Colors.card,
+    color: '#FFFFFF',
     marginBottom: spacing.xs,
   },
   upgradePrice: {
     ...typography.footnote,
-    color: Colors.card,
-    opacity: 0.9,
+    color: 'rgba(255,255,255,0.85)',
   },
 });

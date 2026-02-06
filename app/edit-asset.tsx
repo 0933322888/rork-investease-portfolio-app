@@ -186,7 +186,7 @@ export default function EditAssetScreen() {
             disabled={!isFormValid}
             activeOpacity={0.8}
           >
-            <Check size={20} color={Colors.card} strokeWidth={2.5} />
+            <Check size={20} color="#FFFFFF" strokeWidth={2.5} />
             <Text style={styles.submitButtonText}>Save Changes</Text>
           </TouchableOpacity>
         </View>
@@ -268,7 +268,7 @@ const styles = StyleSheet.create({
   },
   submitButtonText: {
     ...typography.headline,
-    color: Colors.card,
+    color: '#FFFFFF',
   },
   emptyState: {
     flex: 1,

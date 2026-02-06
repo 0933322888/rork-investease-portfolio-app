@@ -397,7 +397,7 @@ const styles = StyleSheet.create({
   },
   premiumButtonText: {
     ...typography.callout,
-    color: Colors.card,
+    color: '#FFFFFF',
     fontWeight: '600' as const,
   },
   dimensionsCard: {

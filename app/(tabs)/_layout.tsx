@@ -1,7 +1,7 @@
-// template
 import { Tabs } from "expo-router";
-import { Home, Layers, Sparkles, Settings } from "lucide-react-native";
+import { Home, Layers, Plus, Sparkles, Settings } from "lucide-react-native";
 import React from "react";
+import { View, StyleSheet } from "react-native";
 
 import Colors from "@/constants/colors";
 
@@ -13,9 +13,9 @@ export default function TabLayout() {
         tabBarInactiveTintColor: Colors.text.tertiary,
         headerShown: false,
         tabBarStyle: {
-          backgroundColor: Colors.card,
+          backgroundColor: '#111122',
           borderTopWidth: 1,
-          borderTopColor: Colors.border.light,
+          borderTopColor: 'rgba(255,255,255,0.06)',
           paddingTop: 8,
           height: 88,
         },
@@ -30,30 +30,65 @@ export default function TabLayout() {
         name="home"
         options={{
           title: "Home",
-          tabBarIcon: ({ color }) => <Home size={24} color={color} strokeWidth={2} />,
+          tabBarIcon: ({ color }) => <Home size={22} color={color} strokeWidth={2} />,
         }}
       />
       <Tabs.Screen
         name="portfolio"
         options={{
           title: "Portfolio",
-          tabBarIcon: ({ color }) => <Layers size={24} color={color} strokeWidth={2} />,
+          tabBarIcon: ({ color }) => <Layers size={22} color={color} strokeWidth={2} />,
         }}
+      />
+      <Tabs.Screen
+        name="add"
+        options={{
+          title: "",
+          tabBarIcon: () => (
+            <View style={styles.addButton}>
+              <Plus size={24} color="#FFFFFF" strokeWidth={2.5} />
+            </View>
+          ),
+          tabBarLabel: () => null,
+        }}
+        listeners={({ navigation }) => ({
+          tabPress: (e) => {
+            e.preventDefault();
+            navigation.navigate('add-asset');
+          },
+        })}
       />
       <Tabs.Screen
         name="insights"
         options={{
           title: "Insights",
-          tabBarIcon: ({ color }) => <Sparkles size={24} color={color} strokeWidth={2} />,
+          tabBarIcon: ({ color }) => <Sparkles size={22} color={color} strokeWidth={2} />,
         }}
       />
       <Tabs.Screen
         name="settings"
         options={{
           title: "Settings",
-          tabBarIcon: ({ color }) => <Settings size={24} color={color} strokeWidth={2} />,
+          tabBarIcon: ({ color }) => <Settings size={22} color={color} strokeWidth={2} />,
         }}
       />
     </Tabs>
   );
 }
+
+const styles = StyleSheet.create({
+  addButton: {
+    width: 52,
+    height: 52,
+    borderRadius: 26,
+    backgroundColor: Colors.accent,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 20,
+    shadowColor: Colors.accent,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.35,
+    shadowRadius: 10,
+    elevation: 8,
+  },
+});

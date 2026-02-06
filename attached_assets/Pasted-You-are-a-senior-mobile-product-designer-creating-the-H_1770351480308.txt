@@ -1,0 +1,233 @@
+You are a senior mobile product designer creating the Home screen for a premium investment portfolio app (React Native + Expo).
+
+The app aggregates all assets in one place:
+
+Bank accounts (Plaid)
+
+Broker accounts / stocks
+
+Crypto exchanges & wallets
+
+Real estate, gold, private investments (manual assets)
+
+The app’s value proposition:
+“All investments. One clear view.”
+
+Design must feel:
+
+Premium fintech (like Wealthsimple / Apple Stocks / Copilot Money)
+
+Minimal, calm, data-dense but not overwhelming
+
+Designed for daily usage and habit building
+
+Target platform:
+
+iOS first (Safe Area aware)
+
+Works cross-platform (Android friendly)
+
+Dark mode first, light mode supported
+
+Primary Goal of Home Screen
+
+The Home screen must answer instantly:
+
+How much am I worth?
+
+How did my wealth change today?
+
+Is my portfolio healthy?
+
+What needs my attention?
+
+This screen should feel like a daily ritual dashboard.
+
+Screen Structure (Top → Bottom)
+1) Header / Greeting
+
+Top safe area section.
+
+Left:
+
+Greeting: “Good evening, Andrey”
+
+Today’s date (small caption)
+
+Right:
+
+Profile avatar button
+
+2) Net Worth Hero Card (MOST IMPORTANT BLOCK)
+
+Large, visually dominant card.
+
+Content:
+
+Label: “Net Worth”
+
+Total net worth value (large typography)
+
+Daily change:
+
+Absolute change (+$1,245)
+
+Percentage (+0.82%)
+
+Small sparkline chart (7D)
+
+Interactions:
+
+Tap → opens detailed portfolio screen
+
+Design notes:
+
+Glass / gradient premium card
+
+Large whitespace
+
+Smooth micro-animation on value updates
+
+3) Asset Allocation Donut
+
+Section title: “Allocation”
+
+Donut chart showing:
+
+Stocks
+
+Crypto
+
+Cash
+
+Real Estate
+
+Other
+
+Below chart:
+Legend rows with:
+
+Color dot
+
+Category name
+
+%
+
+Value
+
+Interaction:
+Tap category → opens filtered asset list.
+
+4) Portfolio Health Score (Killer Feature Entry Point)
+
+Card titled: “Portfolio Health”
+
+Display:
+
+Large score: e.g., 72 / 100
+
+Subtitle: “Good — but overexposed to US tech”
+
+Mini breakdown chips:
+
+Diversification
+
+Concentration
+
+Volatility
+
+Income
+
+Primary CTA button:
+“Improve my portfolio”
+
+This is a major conversion driver.
+
+5) Accounts Snapshot
+
+Section title: “Connected Accounts”
+
+Horizontal scroll cards:
+
+Card content:
+
+Institution logo
+
+Account name
+
+Value
+
+Daily change
+
+Last card:
+“+ Add account”
+
+6) Insights Feed (Retention Engine)
+
+Section title: “Insights”
+
+List of AI insights cards:
+
+Examples:
+
+“You are 45% invested in US markets”
+
+“Crypto grew 12% this week”
+
+“You received $120 in dividends this month”
+
+Each card:
+
+Icon
+
+Short sentence
+
+Tap → opens detail screen
+
+7) Bottom Navigation
+
+5 tabs:
+
+Home (active)
+
+Portfolio
+
+Add Asset (+)
+
+Insights
+
+Settings
+
+Floating + Add Asset button centered.
+
+Visual Style Requirements
+
+Typography:
+
+Large numbers, small captions
+
+Clear hierarchy
+
+Financial readability
+
+Colors:
+
+Dark theme default
+
+Subtle gradients
+
+Category color system (stocks/crypto/cash/etc.)
+
+Spacing:
+
+Generous padding
+
+Rounded cards (16–24 radius)
+
+Animations:
+
+Smooth number transitions
+
+Chart fade-in
+
+Subtle parallax on scroll

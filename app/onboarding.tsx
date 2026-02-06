@@ -25,21 +25,21 @@ const screens = [
     description: 'Track stocks, crypto, real estate, and more. No matter where they are.',
     icon: TrendingUp,
     color: '#007AFF',
-    bgGradient: ['#E8F4FD', '#F0F8FF'],
+    bgGradient: ['#0D1A2E', '#101428'],
   },
   {
     title: 'Clear insights\nat a glance',
     description: 'Understand your portfolio allocation and performance instantly.',
     icon: PieChart,
     color: '#34C759',
-    bgGradient: ['#E8F8ED', '#F0FFF4'],
+    bgGradient: ['#0D1E14', '#0D1410'],
   },
   {
     title: 'Monitor,\nnot trade',
     description: 'Focus on the big picture. This is your clarity dashboard, not a trading platform.',
     icon: Eye,
     color: '#AF52DE',
-    bgGradient: ['#F5E8FD', '#FAF0FF'],
+    bgGradient: ['#1A0D2E', '#140D28'],
   },
 ];
 

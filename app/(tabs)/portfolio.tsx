@@ -424,9 +424,11 @@ const styles = StyleSheet.create({
     fontWeight: '700' as const,
   },
   summaryValue: {
-    ...typography.largeTitle,
-    color: Colors.text.primary,
+    fontSize: 34,
     fontWeight: '700' as const,
+    lineHeight: 40,
+    letterSpacing: -0.5,
+    color: Colors.text.primary,
     marginBottom: spacing.sm,
   },
   summaryFooter: {

@@ -1,12 +1,12 @@
 import { router } from 'expo-router';
 import { 
-  Plus, ChevronRight, TrendingUp, AlertCircle, DollarSign,
+  ChevronRight, TrendingUp, AlertCircle, DollarSign,
   Shield, BarChart3, Landmark, CreditCard, Bitcoin,
 } from 'lucide-react-native';
 import React, { useMemo } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Dimensions } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import Svg, { Path, Defs, LinearGradient, Stop, Circle as SvgCircle } from 'react-native-svg';
+import Svg, { Path, Defs, LinearGradient as SvgLinearGradient, Stop, Circle as SvgCircle, Rect } from 'react-native-svg';
 import Colors from '@/constants/colors';
 import { spacing, borderRadius } from '@/constants/spacing';
 import { typography } from '@/constants/typography';
@@ -15,9 +15,9 @@ import { ASSET_TYPES, AssetType } from '@/types/assets';
 
 const { width } = Dimensions.get('window');
 const CHART_WIDTH = width - spacing.lg * 2 - spacing.lg * 2;
-const CHART_HEIGHT = 100;
+const CHART_HEIGHT = 110;
 
-const ALLOC_COLORS = ['#007AFF', '#FF9500', '#34C759', '#FF3B30', '#AF52DE', '#00BCD4'];
+const ALLOC_COLORS = ['#007AFF', '#FF9500', '#34C759', '#FF3B30', '#AF52DE', '#5AC8FA'];
 
 function getGreeting(): string {
   const hour = new Date().getHours();
@@ -28,6 +28,7 @@ function getGreeting(): string {
 
 function getFormattedDate(): string {
   return new Date().toLocaleDateString('en-US', {
+    weekday: 'long',
     month: 'long',
     day: 'numeric',
     year: 'numeric',
@@ -56,13 +57,13 @@ function NetWorthChart({ data }: { data: number[] }) {
   return (
     <Svg width={CHART_WIDTH} height={CHART_HEIGHT}>
       <Defs>
-        <LinearGradient id="netGrad" x1="0" y1="0" x2="0" y2="1">
-          <Stop offset="0" stopColor="#34C759" stopOpacity="0.3" />
-          <Stop offset="1" stopColor="#34C759" stopOpacity="0.02" />
-        </LinearGradient>
+        <SvgLinearGradient id="netGrad" x1="0" y1="0" x2="0" y2="1">
+          <Stop offset="0" stopColor="#34C759" stopOpacity="0.25" />
+          <Stop offset="1" stopColor="#34C759" stopOpacity="0.01" />
+        </SvgLinearGradient>
       </Defs>
       <Path d={fillPath} fill="url(#netGrad)" />
-      <Path d={pathData} stroke="#34C759" strokeWidth={2} fill="none" strokeLinecap="round" strokeLinejoin="round" />
+      <Path d={pathData} stroke="#34C759" strokeWidth={2.5} fill="none" strokeLinecap="round" strokeLinejoin="round" />
     </Svg>
   );
 }
@@ -70,8 +71,8 @@ function NetWorthChart({ data }: { data: number[] }) {
 function DonutChart({ data, size = 160 }: { data: { percentage: number; color: string }[]; size?: number }) {
   const cx = size / 2;
   const cy = size / 2;
-  const radius = size / 2 - 16;
-  const strokeWidth = 28;
+  const radius = size / 2 - 18;
+  const strokeWidth = 24;
   const circumference = 2 * Math.PI * radius;
 
   const segments: { percentage: number; color: string; offset: number }[] = [];
@@ -83,7 +84,7 @@ function DonutChart({ data, size = 160 }: { data: { percentage: number; color: s
 
   return (
     <Svg width={size} height={size}>
-      <SvgCircle cx={cx} cy={cy} r={radius} stroke={Colors.border.light} strokeWidth={strokeWidth} fill="none" />
+      <SvgCircle cx={cx} cy={cy} r={radius} stroke="rgba(255,255,255,0.06)" strokeWidth={strokeWidth} fill="none" />
       {segments.map((segment, index) => {
         const dashLength = (segment.percentage / 100) * circumference;
         const gapLength = circumference - dashLength;
@@ -151,6 +152,23 @@ const INSIGHTS_DATA = [
   { icon: AlertCircle, text: 'Crypto grew 12% this week.', color: '#FF9500' },
   { icon: DollarSign, text: 'You received $120 in dividends.', color: '#34C759' },
 ];
+
+function HealthGauge({ score }: { score: number }) {
+  const gaugeWidth = 100;
+  const gaugeHeight = 6;
+  const fillWidth = (score / 100) * gaugeWidth;
+  let color = '#FF3B30';
+  if (score >= 80) color = '#34C759';
+  else if (score >= 60) color = '#007AFF';
+  else if (score >= 40) color = '#FF9500';
+
+  return (
+    <Svg width={gaugeWidth} height={gaugeHeight}>
+      <Rect x={0} y={0} width={gaugeWidth} height={gaugeHeight} rx={3} fill="rgba(255,255,255,0.08)" />
+      <Rect x={0} y={0} width={fillWidth} height={gaugeHeight} rx={3} fill={color} />
+    </Svg>
+  );
+}
 
 export default function HomeScreen() {
   const { totalValue, totalGain, totalGainPercent, assetAllocation, assets } = usePortfolio();
@@ -233,26 +251,38 @@ export default function HomeScreen() {
             <Text style={styles.greeting}>{getGreeting()}</Text>
             <Text style={styles.dateText}>{getFormattedDate()}</Text>
           </View>
-          <View style={styles.avatar}>
+          <TouchableOpacity style={styles.avatar} activeOpacity={0.7} onPress={() => router.push('/(tabs)/settings')}>
             <Text style={styles.avatarText}>U</Text>
-          </View>
+          </TouchableOpacity>
         </View>
 
-        <View style={styles.netWorthCard}>
+        <TouchableOpacity
+          style={styles.netWorthCard}
+          activeOpacity={0.85}
+          onPress={() => router.push('/(tabs)/portfolio')}
+        >
+          <View style={styles.netWorthGlow} />
           <Text style={styles.netWorthLabel}>Net Worth</Text>
           <Text style={styles.netWorthValue}>
             ${totalValue.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
           </Text>
           <View style={styles.netWorthChange}>
-            <Text style={[styles.netWorthChangeText, isPositive ? styles.positive : styles.negative]}>
-              {isPositive ? '+' : ''}${Math.abs(totalGain).toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
-              {' · '}{isPositive ? '+' : ''}{totalGainPercent.toFixed(2)}% Today
+            <View style={[styles.changePill, isPositive ? styles.changePillPositive : styles.changePillNegative]}>
+              <Text style={[styles.changePillText, isPositive ? styles.positive : styles.negative]}>
+                {isPositive ? '+' : ''}{totalGainPercent.toFixed(2)}%
+              </Text>
+            </View>
+            <Text style={[styles.netWorthChangeAbs, isPositive ? styles.positive : styles.negative]}>
+              {isPositive ? '+' : '-'}${Math.abs(totalGain).toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 })} today
             </Text>
           </View>
           <View style={styles.chartWrapper}>
             <NetWorthChart data={mockHistoricalData} />
           </View>
-        </View>
+          <View style={styles.chartPeriod}>
+            <Text style={styles.chartPeriodText}>7D</Text>
+          </View>
+        </TouchableOpacity>
 
         {allocationData.length > 0 && (
           <View style={styles.card}>
@@ -260,7 +290,12 @@ export default function HomeScreen() {
             <View style={styles.allocationContent}>
               <View style={styles.allocationList}>
                 {allocationData.map((item) => (
-                  <View key={item.id} style={styles.allocationRow}>
+                  <TouchableOpacity
+                    key={item.id}
+                    style={styles.allocationRow}
+                    activeOpacity={0.6}
+                    onPress={() => router.push('/(tabs)/portfolio')}
+                  >
                     <View style={styles.allocationLeft}>
                       <View style={[styles.allocDot, { backgroundColor: item.color }]} />
                       <Text style={styles.allocLabel}>{item.label}</Text>
@@ -269,7 +304,7 @@ export default function HomeScreen() {
                       <Text style={styles.allocPercent}>{item.percentage.toFixed(0)}%</Text>
                       <Text style={styles.allocValue}>{formatCompact(item.value)}</Text>
                     </View>
-                  </View>
+                  </TouchableOpacity>
                 ))}
               </View>
               <View style={styles.donutWrapper}>
@@ -288,11 +323,16 @@ export default function HomeScreen() {
         {assets.length > 0 && (
           <View style={styles.card}>
             <View style={styles.cardHeader}>
-              <Text style={styles.cardTitle}>Portfolio Health</Text>
-              <Text style={styles.healthScore}>
+              <View>
+                <Text style={[styles.cardTitle, { marginBottom: 0 }]}>Portfolio Health</Text>
+              </View>
+              <View style={styles.scoreContainer}>
                 <Text style={styles.healthScoreBold}>{health.score}</Text>
-                <Text style={styles.healthScoreTotal}> / 100</Text>
-              </Text>
+                <Text style={styles.healthScoreTotal}>/100</Text>
+              </View>
+            </View>
+            <View style={styles.gaugeRow}>
+              <HealthGauge score={health.score} />
             </View>
             <Text style={styles.healthStatus}>
               <Text style={styles.healthLabel}>{health.label}</Text>
@@ -333,13 +373,13 @@ export default function HomeScreen() {
                       <View style={[styles.accountIcon, { backgroundColor: ALLOC_COLORS[index % ALLOC_COLORS.length] + '20' }]}>
                         <Icon size={18} color={ALLOC_COLORS[index % ALLOC_COLORS.length]} />
                       </View>
-                      <Text style={styles.accountName} numberOfLines={1}>{account.name}</Text>
                     </View>
+                    <Text style={styles.accountName} numberOfLines={1}>{account.name}</Text>
                     <Text style={styles.accountValue}>
                       ${account.value.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
                     </Text>
                     <Text style={[styles.accountChange, isUp ? styles.positive : styles.negative]}>
-                      {isUp ? '+' : ''}${Math.abs(account.change).toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
+                      {isUp ? '+' : '-'}${Math.abs(account.change).toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
                     </Text>
                   </View>
                 );
@@ -349,7 +389,9 @@ export default function HomeScreen() {
                 onPress={() => router.push('/connect-plaid')}
                 activeOpacity={0.7}
               >
-                <Plus size={20} color={Colors.text.secondary} />
+                <View style={styles.addAccountPlus}>
+                  <Text style={styles.addAccountPlusText}>+</Text>
+                </View>
                 <Text style={styles.addAccountText}>Add account</Text>
               </TouchableOpacity>
             </ScrollView>
@@ -362,12 +404,12 @@ export default function HomeScreen() {
             {INSIGHTS_DATA.map((insight, index) => {
               const Icon = insight.icon;
               return (
-                <TouchableOpacity key={index} style={styles.insightRow} activeOpacity={0.7}>
-                  <View style={[styles.insightIcon, { backgroundColor: insight.color + '15' }]}>
+                <TouchableOpacity key={index} style={[styles.insightRow, index === INSIGHTS_DATA.length - 1 && { borderBottomWidth: 0 }]} activeOpacity={0.7}>
+                  <View style={[styles.insightIcon, { backgroundColor: insight.color + '20' }]}>
                     <Icon size={16} color={insight.color} />
                   </View>
                   <Text style={styles.insightText} numberOfLines={1}>{insight.text}</Text>
-                  <ChevronRight size={16} color={Colors.text.tertiary} />
+                  <ChevronRight size={14} color={Colors.text.tertiary} />
                 </TouchableOpacity>
               );
             })}
@@ -383,16 +425,6 @@ export default function HomeScreen() {
           </View>
         )}
       </ScrollView>
-
-      <View style={styles.fab}>
-        <TouchableOpacity
-          style={styles.fabButton}
-          onPress={() => router.push('/add-asset')}
-          activeOpacity={0.8}
-        >
-          <Plus size={24} color="#FFFFFF" strokeWidth={2.5} />
-        </TouchableOpacity>
-      </View>
     </SafeAreaView>
   );
 }
@@ -417,63 +449,105 @@ const styles = StyleSheet.create({
     paddingBottom: spacing.lg,
   },
   greeting: {
-    fontSize: 24,
+    fontSize: 26,
     fontWeight: '700',
     color: Colors.text.primary,
-    letterSpacing: -0.3,
+    letterSpacing: -0.5,
   },
   dateText: {
     ...typography.footnote,
     color: Colors.text.secondary,
-    marginTop: 2,
+    marginTop: 4,
   },
   avatar: {
     width: 44,
     height: 44,
     borderRadius: 22,
-    backgroundColor: Colors.accent + '15',
+    backgroundColor: 'rgba(255,255,255,0.1)',
     alignItems: 'center',
     justifyContent: 'center',
-    borderWidth: 2,
-    borderColor: Colors.accent + '30',
+    borderWidth: 1.5,
+    borderColor: 'rgba(255,255,255,0.15)',
   },
   avatarText: {
     fontSize: 18,
     fontWeight: '600',
-    color: Colors.accent,
+    color: Colors.text.primary,
   },
   netWorthCard: {
-    backgroundColor: '#1C1C2E',
+    backgroundColor: '#161628',
     marginHorizontal: spacing.lg,
     marginBottom: spacing.md,
     padding: spacing.lg,
-    borderRadius: borderRadius.xl,
+    paddingBottom: spacing.md,
+    borderRadius: 20,
     overflow: 'hidden',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.06)',
+    position: 'relative',
+  },
+  netWorthGlow: {
+    position: 'absolute',
+    top: -60,
+    right: -40,
+    width: 180,
+    height: 180,
+    borderRadius: 90,
+    backgroundColor: 'rgba(0,122,255,0.08)',
   },
   netWorthLabel: {
     ...typography.subhead,
-    color: 'rgba(255,255,255,0.6)',
-    marginBottom: spacing.xs,
+    color: 'rgba(255,255,255,0.5)',
+    marginBottom: spacing.sm,
+    letterSpacing: 0.5,
+    textTransform: 'uppercase',
+    fontSize: 12,
   },
   netWorthValue: {
-    fontSize: 40,
+    fontSize: 42,
     fontWeight: '700',
     color: '#FFFFFF',
-    letterSpacing: -1,
-    lineHeight: 48,
+    letterSpacing: -1.5,
+    lineHeight: 50,
   },
   netWorthChange: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginTop: spacing.xs,
+    marginTop: spacing.sm,
+    gap: spacing.sm,
   },
-  netWorthChangeText: {
+  changePill: {
+    paddingHorizontal: 10,
+    paddingVertical: 3,
+    borderRadius: borderRadius.full,
+  },
+  changePillPositive: {
+    backgroundColor: 'rgba(52,199,89,0.15)',
+  },
+  changePillNegative: {
+    backgroundColor: 'rgba(255,59,48,0.15)',
+  },
+  changePillText: {
+    fontSize: 13,
+    fontWeight: '700',
+  },
+  netWorthChangeAbs: {
     ...typography.footnote,
     fontWeight: '500',
   },
   chartWrapper: {
-    marginTop: spacing.md,
+    marginTop: spacing.lg,
     marginHorizontal: -spacing.sm,
+  },
+  chartPeriod: {
+    alignSelf: 'flex-end',
+    marginTop: spacing.xs,
+  },
+  chartPeriodText: {
+    fontSize: 11,
+    fontWeight: '600',
+    color: 'rgba(255,255,255,0.3)',
+    letterSpacing: 0.5,
   },
   positive: {
     color: '#34C759',
@@ -486,7 +560,7 @@ const styles = StyleSheet.create({
     marginHorizontal: spacing.lg,
     marginBottom: spacing.md,
     padding: spacing.lg,
-    borderRadius: borderRadius.xl,
+    borderRadius: 20,
     borderWidth: 1,
     borderColor: Colors.border.light,
   },
@@ -497,9 +571,10 @@ const styles = StyleSheet.create({
     marginBottom: spacing.sm,
   },
   cardTitle: {
-    ...typography.headline,
-    color: Colors.text.primary,
+    fontSize: 18,
     fontWeight: '700',
+    color: Colors.text.primary,
+    letterSpacing: -0.3,
     marginBottom: spacing.md,
   },
   allocationContent: {
@@ -508,7 +583,7 @@ const styles = StyleSheet.create({
   },
   allocationList: {
     flex: 1,
-    gap: spacing.md,
+    gap: 14,
   },
   allocationRow: {
     flexDirection: 'row',
@@ -552,8 +627,9 @@ const styles = StyleSheet.create({
   donutWrapper: {
     marginLeft: spacing.md,
   },
-  healthScore: {
-    fontSize: 16,
+  scoreContainer: {
+    flexDirection: 'row',
+    alignItems: 'baseline',
   },
   healthScoreBold: {
     fontSize: 32,
@@ -561,9 +637,13 @@ const styles = StyleSheet.create({
     color: Colors.text.primary,
   },
   healthScoreTotal: {
-    fontSize: 18,
+    fontSize: 16,
     fontWeight: '400',
     color: Colors.text.tertiary,
+    marginLeft: 2,
+  },
+  gaugeRow: {
+    marginBottom: spacing.md,
   },
   healthStatus: {
     ...typography.subhead,
@@ -588,7 +668,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.xs + 2,
     borderRadius: borderRadius.full,
-    backgroundColor: Colors.background,
+    backgroundColor: 'rgba(255,255,255,0.05)',
     borderWidth: 1,
     borderColor: Colors.border.medium,
   },
@@ -598,15 +678,15 @@ const styles = StyleSheet.create({
     fontWeight: '500',
   },
   improveButton: {
-    backgroundColor: '#34C759',
-    paddingVertical: spacing.md,
-    paddingHorizontal: spacing.lg,
+    backgroundColor: Colors.accent,
+    paddingVertical: 14,
+    paddingHorizontal: spacing.xl,
     borderRadius: borderRadius.full,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     gap: spacing.xs,
-    alignSelf: 'center',
+    alignSelf: 'stretch',
   },
   improveButtonText: {
     ...typography.subhead,
@@ -617,9 +697,10 @@ const styles = StyleSheet.create({
     marginBottom: spacing.md,
   },
   sectionTitle: {
-    ...typography.headline,
-    color: Colors.text.primary,
+    fontSize: 18,
     fontWeight: '700',
+    color: Colors.text.primary,
+    letterSpacing: -0.3,
     paddingHorizontal: spacing.lg,
     marginBottom: spacing.md,
   },
@@ -636,15 +717,12 @@ const styles = StyleSheet.create({
     borderColor: Colors.border.light,
   },
   accountTop: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.sm,
     marginBottom: spacing.sm,
   },
   accountIcon: {
-    width: 32,
-    height: 32,
-    borderRadius: 8,
+    width: 36,
+    height: 36,
+    borderRadius: 10,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -652,20 +730,20 @@ const styles = StyleSheet.create({
     ...typography.caption,
     color: Colors.text.secondary,
     fontWeight: '600',
-    flex: 1,
+    marginBottom: 6,
   },
   accountValue: {
-    ...typography.headline,
-    color: Colors.text.primary,
+    fontSize: 16,
     fontWeight: '700',
+    color: Colors.text.primary,
   },
   accountChange: {
     ...typography.caption,
     fontWeight: '600',
-    marginTop: 2,
+    marginTop: 4,
   },
   addAccountCard: {
-    backgroundColor: Colors.background,
+    backgroundColor: 'rgba(255,255,255,0.03)',
     borderRadius: borderRadius.lg,
     padding: spacing.md,
     width: 130,
@@ -676,6 +754,19 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     gap: spacing.sm,
   },
+  addAccountPlus: {
+    width: 36,
+    height: 36,
+    borderRadius: 10,
+    backgroundColor: 'rgba(255,255,255,0.06)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  addAccountPlusText: {
+    fontSize: 20,
+    fontWeight: '300',
+    color: Colors.text.secondary,
+  },
   addAccountText: {
     ...typography.caption,
     color: Colors.text.secondary,
@@ -684,7 +775,7 @@ const styles = StyleSheet.create({
   insightsCard: {
     backgroundColor: Colors.card,
     marginHorizontal: spacing.lg,
-    borderRadius: borderRadius.xl,
+    borderRadius: 20,
     borderWidth: 1,
     borderColor: Colors.border.light,
     overflow: 'hidden',
@@ -692,16 +783,16 @@ const styles = StyleSheet.create({
   insightRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: spacing.md,
+    paddingVertical: 14,
     paddingHorizontal: spacing.lg,
     borderBottomWidth: 1,
     borderBottomColor: Colors.border.light,
     gap: spacing.md,
   },
   insightIcon: {
-    width: 32,
-    height: 32,
-    borderRadius: 8,
+    width: 34,
+    height: 34,
+    borderRadius: 10,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -726,23 +817,5 @@ const styles = StyleSheet.create({
     color: Colors.text.secondary,
     textAlign: 'center',
     maxWidth: 280,
-  },
-  fab: {
-    position: 'absolute',
-    right: spacing.lg,
-    bottom: spacing.lg,
-  },
-  fabButton: {
-    width: 56,
-    height: 56,
-    borderRadius: borderRadius.full,
-    backgroundColor: Colors.accent,
-    alignItems: 'center',
-    justifyContent: 'center',
-    shadowColor: Colors.accent,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 12,
-    elevation: 8,
   },
 });
