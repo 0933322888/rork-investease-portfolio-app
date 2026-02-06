@@ -1,129 +1,225 @@
 import { router } from 'expo-router';
-import { Plus, Fingerprint } from 'lucide-react-native';
-import React, { useMemo, useState } from 'react';
+import { 
+  Plus, ChevronRight, TrendingUp, AlertCircle, DollarSign,
+  Shield, BarChart3, Landmark, CreditCard, Bitcoin,
+} from 'lucide-react-native';
+import React, { useMemo } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Dimensions } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import Svg, { Path, Circle, Defs, LinearGradient, Stop } from 'react-native-svg';
+import Svg, { Path, Defs, LinearGradient, Stop, Circle as SvgCircle } from 'react-native-svg';
 import Colors from '@/constants/colors';
 import { spacing, borderRadius } from '@/constants/spacing';
 import { typography } from '@/constants/typography';
 import { usePortfolio } from '@/contexts/PortfolioContext';
-import { ASSET_TYPES } from '@/types/assets';
+import { ASSET_TYPES, AssetType } from '@/types/assets';
 
 const { width } = Dimensions.get('window');
-const CHART_WIDTH = width - spacing.lg * 2;
-const CHART_HEIGHT = 180;
-const CHART_PADDING = 16;
+const CHART_WIDTH = width - spacing.lg * 2 - spacing.lg * 2;
+const CHART_HEIGHT = 100;
 
-function SimpleLineChart({ data }: { data: number[] }) {
-  if (data.length === 0) {
-    return (
-      <View style={styles.emptyChart}>
-        <Text style={styles.emptyChartText}>Add your first asset to see performance</Text>
-      </View>
-    );
-  }
+const ALLOC_COLORS = ['#007AFF', '#FF9500', '#34C759', '#FF3B30', '#AF52DE', '#00BCD4'];
+
+function getGreeting(): string {
+  const hour = new Date().getHours();
+  if (hour < 12) return 'Good morning';
+  if (hour < 17) return 'Good afternoon';
+  return 'Good evening';
+}
+
+function getFormattedDate(): string {
+  return new Date().toLocaleDateString('en-US', {
+    month: 'long',
+    day: 'numeric',
+    year: 'numeric',
+  });
+}
+
+function NetWorthChart({ data }: { data: number[] }) {
+  if (data.length === 0) return null;
 
   const max = Math.max(...data);
   const min = Math.min(...data);
   const range = max - min || 1;
-
-  const chartDrawWidth = CHART_WIDTH - CHART_PADDING * 2;
-  const chartDrawHeight = CHART_HEIGHT - CHART_PADDING * 2;
+  const padding = 4;
+  const drawW = CHART_WIDTH - padding * 2;
+  const drawH = CHART_HEIGHT - padding * 2;
 
   const points = data.map((value, index) => {
-    const x = CHART_PADDING + (index / (data.length - 1)) * chartDrawWidth;
-    const y = CHART_PADDING + chartDrawHeight - ((value - min) / range) * chartDrawHeight;
-    return `${x},${y}`;
+    const x = padding + (index / (data.length - 1)) * drawW;
+    const y = padding + drawH - ((value - min) / range) * drawH;
+    return { x, y };
   });
 
-  const pathData = `M ${points.join(' L ')}`;
-
-  const fillPath = `${pathData} L ${CHART_WIDTH - CHART_PADDING},${CHART_HEIGHT} L ${CHART_PADDING},${CHART_HEIGHT} Z`;
+  const pathData = `M ${points.map(p => `${p.x},${p.y}`).join(' L ')}`;
+  const fillPath = `${pathData} L ${CHART_WIDTH - padding},${CHART_HEIGHT} L ${padding},${CHART_HEIGHT} Z`;
 
   return (
-    <Svg width={CHART_WIDTH} height={CHART_HEIGHT} style={styles.chart}>
+    <Svg width={CHART_WIDTH} height={CHART_HEIGHT}>
       <Defs>
-        <LinearGradient id="chartGradient" x1="0" y1="0" x2="0" y2="1">
-          <Stop offset="0" stopColor={Colors.accent} stopOpacity="0.3" />
-          <Stop offset="1" stopColor={Colors.accent} stopOpacity="0.01" />
+        <LinearGradient id="netGrad" x1="0" y1="0" x2="0" y2="1">
+          <Stop offset="0" stopColor="#34C759" stopOpacity="0.3" />
+          <Stop offset="1" stopColor="#34C759" stopOpacity="0.02" />
         </LinearGradient>
       </Defs>
-      <Path
-        d={fillPath}
-        fill="url(#chartGradient)"
-      />
-      <Path
-        d={pathData}
-        stroke={Colors.accent}
-        strokeWidth={3}
-        fill="none"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-      {data.length <= 50 && points.map((point, index) => {
-        const [x, y] = point.split(',').map(Number);
-        const isFirst = index === 0;
-        const isLast = index === points.length - 1;
-        if (isFirst || isLast || index % Math.ceil(points.length / 10) === 0) {
-          return (
-            <Circle
-              key={index}
-              cx={x}
-              cy={y}
-              r={4}
-              fill={Colors.card}
-              stroke={Colors.accent}
-              strokeWidth={2}
-            />
-          );
-        }
-        return null;
+      <Path d={fillPath} fill="url(#netGrad)" />
+      <Path d={pathData} stroke="#34C759" strokeWidth={2} fill="none" strokeLinecap="round" strokeLinejoin="round" />
+    </Svg>
+  );
+}
+
+function DonutChart({ data, size = 160 }: { data: { percentage: number; color: string }[]; size?: number }) {
+  const cx = size / 2;
+  const cy = size / 2;
+  const radius = size / 2 - 16;
+  const strokeWidth = 28;
+  const circumference = 2 * Math.PI * radius;
+
+  const segments: { percentage: number; color: string; offset: number }[] = [];
+  let accumulated = 0;
+  data.forEach((segment) => {
+    segments.push({ ...segment, offset: accumulated });
+    accumulated += segment.percentage;
+  });
+
+  return (
+    <Svg width={size} height={size}>
+      <SvgCircle cx={cx} cy={cy} r={radius} stroke={Colors.border.light} strokeWidth={strokeWidth} fill="none" />
+      {segments.map((segment, index) => {
+        const dashLength = (segment.percentage / 100) * circumference;
+        const gapLength = circumference - dashLength;
+        const dashOffset = -((segment.offset / 100) * circumference);
+        return (
+          <SvgCircle
+            key={index}
+            cx={cx}
+            cy={cy}
+            r={radius}
+            stroke={segment.color}
+            strokeWidth={strokeWidth}
+            fill="none"
+            strokeDasharray={`${dashLength} ${gapLength}`}
+            strokeDashoffset={dashOffset}
+            strokeLinecap="butt"
+            rotation={-90}
+            origin={`${cx}, ${cy}`}
+          />
+        );
       })}
     </Svg>
   );
 }
 
-type DateRange = '1D' | '1W' | '1M' | '3M' | '1Y' | 'All';
+function formatCompact(value: number): string {
+  if (value >= 1000000) return `$${(value / 1000000).toFixed(1)}M`;
+  if (value >= 1000) return `$${(value / 1000).toFixed(0)}K`;
+  return `$${value.toFixed(0)}`;
+}
+
+function getHealthScore(allocationData: { id: AssetType; percentage: number }[]): { score: number; label: string; detail: string } {
+  if (allocationData.length === 0) return { score: 0, label: 'N/A', detail: 'Add assets to see your score' };
+  
+  let score = 50;
+  const typeCount = allocationData.length;
+  if (typeCount >= 4) score += 20;
+  else if (typeCount >= 3) score += 15;
+  else if (typeCount >= 2) score += 8;
+  
+  const maxPct = Math.max(...allocationData.map(d => d.percentage));
+  if (maxPct < 40) score += 20;
+  else if (maxPct < 60) score += 10;
+  else score -= 5;
+
+  const hasStocks = allocationData.some(d => d.id === 'stocks');
+  const hasCash = allocationData.some(d => d.id === 'cash');
+  if (hasStocks && hasCash) score += 10;
+
+  score = Math.min(100, Math.max(0, score));
+
+  let label = 'Needs Work';
+  let detail = 'Consider diversifying more';
+  if (score >= 80) { label = 'Excellent'; detail = 'Well-diversified portfolio'; }
+  else if (score >= 60) { label = 'Good'; detail = maxPct > 50 ? `Overexposed to ${allocationData.find(d => d.percentage === maxPct)?.id || 'one sector'}` : 'Room for improvement'; }
+  else if (score >= 40) { label = 'Fair'; detail = 'More diversification recommended'; }
+
+  return { score, label, detail };
+}
+
+const HEALTH_CATEGORIES = ['Diversification', 'Concentration', 'Volatility', 'Income'];
+
+const INSIGHTS_DATA = [
+  { icon: Landmark, text: 'You are 45% invested in US markets.', color: '#007AFF' },
+  { icon: AlertCircle, text: 'Crypto grew 12% this week.', color: '#FF9500' },
+  { icon: DollarSign, text: 'You received $120 in dividends.', color: '#34C759' },
+];
 
 export default function HomeScreen() {
   const { totalValue, totalGain, totalGainPercent, assetAllocation, assets } = usePortfolio();
-  const [selectedRange, setSelectedRange] = useState<DateRange>('1M');
-
-  const dataPointsForRange = (range: DateRange): number => {
-    switch (range) {
-      case '1D': return 24;
-      case '1W': return 7;
-      case '1M': return 30;
-      case '3M': return 90;
-      case '1Y': return 365;
-      case 'All': return 730;
-      default: return 30;
-    }
-  };
 
   const mockHistoricalData = useMemo(() => {
     if (assets.length === 0) return [];
     const baseValue = totalValue - totalGain;
-    const points = dataPointsForRange(selectedRange);
+    const points = 30;
     return Array.from({ length: points }, (_, i) => {
       const progress = i / (points - 1);
-      return baseValue + totalGain * progress + Math.random() * baseValue * 0.02;
+      return baseValue + totalGain * progress + Math.random() * baseValue * 0.015;
     });
-  }, [totalValue, totalGain, assets.length, selectedRange]);
-
-  const dateRanges: DateRange[] = ['1D', '1W', '1M', '3M', '1Y', 'All'];
+  }, [totalValue, totalGain, assets.length]);
 
   const allocationData = useMemo(() => {
     const total = Object.values(assetAllocation).reduce((sum, val) => sum + val, 0);
-    return ASSET_TYPES.map((type) => ({
+    return ASSET_TYPES.map((type, index) => ({
       ...type,
       value: assetAllocation[type.id],
       percentage: total > 0 ? (assetAllocation[type.id] / total) * 100 : 0,
+      color: ALLOC_COLORS[index % ALLOC_COLORS.length],
     })).filter((item) => item.value > 0);
   }, [assetAllocation]);
 
+  const health = useMemo(() => getHealthScore(allocationData), [allocationData]);
   const isPositive = totalGain >= 0;
+
+  const connectedAccounts = useMemo(() => {
+    const accounts: { name: string; value: number; change: number; icon: any; type: string }[] = [];
+    const grouped: Record<string, { total: number; count: number }> = {};
+    
+    assets.forEach(asset => {
+      const key = asset.type;
+      if (!grouped[key]) grouped[key] = { total: 0, count: 0 };
+      grouped[key].total += asset.quantity * asset.currentPrice;
+      grouped[key].count++;
+    });
+
+    const typeIcons: Record<string, any> = {
+      stocks: TrendingUp,
+      crypto: Bitcoin,
+      cash: CreditCard,
+      'real-estate': Landmark,
+      commodities: BarChart3,
+      'fixed-income': Shield,
+    };
+
+    const typeLabels: Record<string, string> = {
+      stocks: 'Stocks',
+      crypto: 'Crypto',
+      cash: 'Cash',
+      'real-estate': 'Real Estate',
+      commodities: 'Commodities',
+      'fixed-income': 'Bonds',
+    };
+
+    Object.entries(grouped).forEach(([type, data]) => {
+      const change = (Math.random() - 0.3) * data.total * 0.01;
+      accounts.push({
+        name: typeLabels[type] || type,
+        value: data.total,
+        change,
+        icon: typeIcons[type] || TrendingUp,
+        type,
+      });
+    });
+
+    return accounts.sort((a, b) => b.value - a.value).slice(0, 5);
+  }, [assets]);
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
@@ -133,106 +229,156 @@ export default function HomeScreen() {
         contentContainerStyle={styles.scrollContent}
       >
         <View style={styles.header}>
-          <Text style={styles.label}>Total Portfolio Value</Text>
-          <Text style={styles.heroValue}>
-            ${totalValue.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+          <View>
+            <Text style={styles.greeting}>{getGreeting()}</Text>
+            <Text style={styles.dateText}>{getFormattedDate()}</Text>
+          </View>
+          <View style={styles.avatar}>
+            <Text style={styles.avatarText}>U</Text>
+          </View>
+        </View>
+
+        <View style={styles.netWorthCard}>
+          <Text style={styles.netWorthLabel}>Net Worth</Text>
+          <Text style={styles.netWorthValue}>
+            ${totalValue.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
           </Text>
-          <View style={styles.performanceContainer}>
-            <Text style={[styles.performance, isPositive ? styles.positive : styles.negative]}>
-              {isPositive ? '+' : ''}${Math.abs(totalGain).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-            </Text>
-            <Text style={[styles.performancePercent, isPositive ? styles.positive : styles.negative]}>
-              ({isPositive ? '+' : ''}{totalGainPercent.toFixed(2)}%)
+          <View style={styles.netWorthChange}>
+            <Text style={[styles.netWorthChangeText, isPositive ? styles.positive : styles.negative]}>
+              {isPositive ? '+' : ''}${Math.abs(totalGain).toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
+              {' · '}{isPositive ? '+' : ''}{totalGainPercent.toFixed(2)}% Today
             </Text>
           </View>
-        </View>
-
-        <View style={styles.chartCard}>
-          <View style={styles.dateRangeContainer}>
-            {dateRanges.map((range) => (
-              <TouchableOpacity
-                key={range}
-                style={[
-                  styles.dateRangeButton,
-                  selectedRange === range && styles.dateRangeButtonActive,
-                ]}
-                onPress={() => setSelectedRange(range)}
-                activeOpacity={0.7}
-              >
-                <Text
-                  style={[
-                    styles.dateRangeText,
-                    selectedRange === range && styles.dateRangeTextActive,
-                  ]}
-                >
-                  {range}
-                </Text>
-              </TouchableOpacity>
-            ))}
+          <View style={styles.chartWrapper}>
+            <NetWorthChart data={mockHistoricalData} />
           </View>
-          <SimpleLineChart data={mockHistoricalData} />
         </View>
-
-        {assets.length > 0 && (
-          <TouchableOpacity
-            style={styles.fingerprintCard}
-            onPress={() => router.push('/risk-fingerprint')}
-            activeOpacity={0.8}
-          >
-            <View style={styles.fingerprintIcon}>
-              <Fingerprint size={28} color={Colors.accent} strokeWidth={2} />
-            </View>
-            <View style={styles.fingerprintContent}>
-              <Text style={styles.fingerprintTitle}>Portfolio Fingerprint</Text>
-              <Text style={styles.fingerprintDescription}>
-                See your portfolio's risk profile at a glance
-              </Text>
-            </View>
-          </TouchableOpacity>
-        )}
 
         {allocationData.length > 0 && (
-          <View style={styles.allocationCard}>
-            <Text style={styles.sectionTitle}>Asset Allocation</Text>
-            <View style={styles.allocationBars}>
-              <View style={styles.barContainer}>
-                {allocationData.map((item, index) => (
-                  <View
-                    key={item.id}
-                    style={[
-                      styles.bar,
-                      {
-                        flex: item.percentage,
-                        backgroundColor: getColorForIndex(index),
-                        borderTopLeftRadius: index === 0 ? borderRadius.sm : 0,
-                        borderBottomLeftRadius: index === 0 ? borderRadius.sm : 0,
-                        borderTopRightRadius: index === allocationData.length - 1 ? borderRadius.sm : 0,
-                        borderBottomRightRadius: index === allocationData.length - 1 ? borderRadius.sm : 0,
-                      },
-                    ]}
-                  />
+          <View style={styles.card}>
+            <Text style={styles.cardTitle}>Allocation</Text>
+            <View style={styles.allocationContent}>
+              <View style={styles.allocationList}>
+                {allocationData.map((item) => (
+                  <View key={item.id} style={styles.allocationRow}>
+                    <View style={styles.allocationLeft}>
+                      <View style={[styles.allocDot, { backgroundColor: item.color }]} />
+                      <Text style={styles.allocLabel}>{item.label}</Text>
+                    </View>
+                    <View style={styles.allocationRight}>
+                      <Text style={styles.allocPercent}>{item.percentage.toFixed(0)}%</Text>
+                      <Text style={styles.allocValue}>{formatCompact(item.value)}</Text>
+                    </View>
+                  </View>
                 ))}
               </View>
+              <View style={styles.donutWrapper}>
+                <DonutChart
+                  data={allocationData.map(item => ({
+                    percentage: item.percentage,
+                    color: item.color,
+                  }))}
+                  size={140}
+                />
+              </View>
             </View>
-            <View style={styles.allocationList}>
-              {allocationData.map((item, index) => (
-                <View key={item.id} style={styles.allocationItem}>
-                  <View style={styles.allocationLeft}>
-                    <View style={[styles.allocationDot, { backgroundColor: getColorForIndex(index) }]} />
-                    <Text style={styles.allocationLabel}>{item.label}</Text>
-                  </View>
-                  <Text style={styles.allocationValue}>{item.percentage.toFixed(1)}%</Text>
+          </View>
+        )}
+
+        {assets.length > 0 && (
+          <View style={styles.card}>
+            <View style={styles.cardHeader}>
+              <Text style={styles.cardTitle}>Portfolio Health</Text>
+              <Text style={styles.healthScore}>
+                <Text style={styles.healthScoreBold}>{health.score}</Text>
+                <Text style={styles.healthScoreTotal}> / 100</Text>
+              </Text>
+            </View>
+            <Text style={styles.healthStatus}>
+              <Text style={styles.healthLabel}>{health.label}</Text>
+              <Text style={styles.healthDetail}> — {health.detail}</Text>
+            </Text>
+            <View style={styles.healthPills}>
+              {HEALTH_CATEGORIES.map((cat) => (
+                <View key={cat} style={styles.healthPill}>
+                  <Text style={styles.healthPillText}>{cat}</Text>
                 </View>
               ))}
             </View>
+            <TouchableOpacity
+              style={styles.improveButton}
+              onPress={() => router.push('/risk-fingerprint')}
+              activeOpacity={0.8}
+            >
+              <Text style={styles.improveButtonText}>Improve my portfolio</Text>
+              <ChevronRight size={16} color="#FFFFFF" />
+            </TouchableOpacity>
           </View>
         )}
+
+        {connectedAccounts.length > 0 && (
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Connected Accounts</Text>
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={styles.accountsScroll}
+            >
+              {connectedAccounts.map((account, index) => {
+                const Icon = account.icon;
+                const isUp = account.change >= 0;
+                return (
+                  <View key={index} style={styles.accountCard}>
+                    <View style={styles.accountTop}>
+                      <View style={[styles.accountIcon, { backgroundColor: ALLOC_COLORS[index % ALLOC_COLORS.length] + '20' }]}>
+                        <Icon size={18} color={ALLOC_COLORS[index % ALLOC_COLORS.length]} />
+                      </View>
+                      <Text style={styles.accountName} numberOfLines={1}>{account.name}</Text>
+                    </View>
+                    <Text style={styles.accountValue}>
+                      ${account.value.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
+                    </Text>
+                    <Text style={[styles.accountChange, isUp ? styles.positive : styles.negative]}>
+                      {isUp ? '+' : ''}${Math.abs(account.change).toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
+                    </Text>
+                  </View>
+                );
+              })}
+              <TouchableOpacity
+                style={styles.addAccountCard}
+                onPress={() => router.push('/connect-plaid')}
+                activeOpacity={0.7}
+              >
+                <Plus size={20} color={Colors.text.secondary} />
+                <Text style={styles.addAccountText}>Add account</Text>
+              </TouchableOpacity>
+            </ScrollView>
+          </View>
+        )}
+
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Insights</Text>
+          <View style={styles.insightsCard}>
+            {INSIGHTS_DATA.map((insight, index) => {
+              const Icon = insight.icon;
+              return (
+                <TouchableOpacity key={index} style={styles.insightRow} activeOpacity={0.7}>
+                  <View style={[styles.insightIcon, { backgroundColor: insight.color + '15' }]}>
+                    <Icon size={16} color={insight.color} />
+                  </View>
+                  <Text style={styles.insightText} numberOfLines={1}>{insight.text}</Text>
+                  <ChevronRight size={16} color={Colors.text.tertiary} />
+                </TouchableOpacity>
+              );
+            })}
+          </View>
+        </View>
 
         {assets.length === 0 && (
           <View style={styles.emptyState}>
             <Text style={styles.emptyTitle}>Start Building Your Portfolio</Text>
             <Text style={styles.emptyDescription}>
-              Add your first investment to start tracking your wealth in one place
+              Add your first investment to start tracking your wealth
             </Text>
           </View>
         )}
@@ -244,16 +390,11 @@ export default function HomeScreen() {
           onPress={() => router.push('/add-asset')}
           activeOpacity={0.8}
         >
-          <Plus size={24} color={Colors.card} strokeWidth={2.5} />
+          <Plus size={24} color="#FFFFFF" strokeWidth={2.5} />
         </TouchableOpacity>
       </View>
     </SafeAreaView>
   );
-}
-
-function getColorForIndex(index: number): string {
-  const colors = [Colors.accent, '#00C853', '#FF9500', '#FF3B30', '#9C27B0', '#00BCD4'];
-  return colors[index % colors.length];
 }
 
 const styles = StyleSheet.create({
@@ -268,121 +409,108 @@ const styles = StyleSheet.create({
     paddingBottom: spacing.xxxl + spacing.xl,
   },
   header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
     paddingHorizontal: spacing.lg,
-    paddingTop: 60,
+    paddingTop: spacing.md,
     paddingBottom: spacing.lg,
   },
-  label: {
-    ...typography.subhead,
-    color: Colors.text.secondary,
-    marginBottom: spacing.sm,
-  },
-  heroValue: {
-    ...typography.hero,
+  greeting: {
+    fontSize: 24,
+    fontWeight: '700',
     color: Colors.text.primary,
-    marginBottom: spacing.xs,
+    letterSpacing: -0.3,
   },
-  performanceContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.xs,
-  },
-  performance: {
-    ...typography.title3,
-  },
-  performancePercent: {
-    ...typography.body,
-  },
-  positive: {
-    color: Colors.success,
-  },
-  negative: {
-    color: Colors.error,
-  },
-  chartCard: {
-    backgroundColor: Colors.card,
-    marginHorizontal: spacing.lg,
-    marginBottom: spacing.lg,
-    padding: spacing.md,
-    borderRadius: borderRadius.lg,
-    shadowColor: Colors.shadow,
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 1,
-    shadowRadius: 8,
-    elevation: 2,
-  },
-  dateRangeContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginBottom: spacing.md,
-    backgroundColor: Colors.background,
-    borderRadius: borderRadius.md,
-    padding: 4,
-  },
-  dateRangeButton: {
-    flex: 1,
-    paddingVertical: spacing.xs,
-    paddingHorizontal: spacing.xs,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderRadius: borderRadius.sm,
-  },
-  dateRangeButtonActive: {
-    backgroundColor: Colors.accent,
-  },
-  dateRangeText: {
+  dateText: {
     ...typography.footnote,
     color: Colors.text.secondary,
-    fontWeight: '500' as const,
+    marginTop: 2,
   },
-  dateRangeTextActive: {
-    color: Colors.card,
-    fontWeight: '600' as const,
-  },
-  chart: {
-    marginVertical: spacing.sm,
-  },
-  emptyChart: {
-    height: CHART_HEIGHT,
+  avatar: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: Colors.accent + '15',
     alignItems: 'center',
     justifyContent: 'center',
+    borderWidth: 2,
+    borderColor: Colors.accent + '30',
   },
-  emptyChartText: {
-    ...typography.callout,
-    color: Colors.text.tertiary,
+  avatarText: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: Colors.accent,
   },
-  allocationCard: {
+  netWorthCard: {
+    backgroundColor: '#1C1C2E',
+    marginHorizontal: spacing.lg,
+    marginBottom: spacing.md,
+    padding: spacing.lg,
+    borderRadius: borderRadius.xl,
+    overflow: 'hidden',
+  },
+  netWorthLabel: {
+    ...typography.subhead,
+    color: 'rgba(255,255,255,0.6)',
+    marginBottom: spacing.xs,
+  },
+  netWorthValue: {
+    fontSize: 40,
+    fontWeight: '700',
+    color: '#FFFFFF',
+    letterSpacing: -1,
+    lineHeight: 48,
+  },
+  netWorthChange: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: spacing.xs,
+  },
+  netWorthChangeText: {
+    ...typography.footnote,
+    fontWeight: '500',
+  },
+  chartWrapper: {
+    marginTop: spacing.md,
+    marginHorizontal: -spacing.sm,
+  },
+  positive: {
+    color: '#34C759',
+  },
+  negative: {
+    color: '#FF3B30',
+  },
+  card: {
     backgroundColor: Colors.card,
     marginHorizontal: spacing.lg,
-    marginBottom: spacing.lg,
+    marginBottom: spacing.md,
     padding: spacing.lg,
-    borderRadius: borderRadius.lg,
-    shadowColor: Colors.shadow,
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 1,
-    shadowRadius: 8,
-    elevation: 2,
+    borderRadius: borderRadius.xl,
+    borderWidth: 1,
+    borderColor: Colors.border.light,
   },
-  sectionTitle: {
-    ...typography.title3,
+  cardHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: spacing.sm,
+  },
+  cardTitle: {
+    ...typography.headline,
     color: Colors.text.primary,
+    fontWeight: '700',
     marginBottom: spacing.md,
   },
-  allocationBars: {
-    marginBottom: spacing.lg,
-  },
-  barContainer: {
+  allocationContent: {
     flexDirection: 'row',
-    height: 8,
-    gap: 2,
-  },
-  bar: {
-    height: '100%',
+    alignItems: 'center',
   },
   allocationList: {
+    flex: 1,
     gap: spacing.md,
   },
-  allocationItem: {
+  allocationRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
@@ -391,24 +519,200 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.sm,
+    flex: 1,
   },
-  allocationDot: {
-    width: 12,
-    height: 12,
-    borderRadius: borderRadius.full,
+  allocDot: {
+    width: 10,
+    height: 10,
+    borderRadius: 5,
   },
-  allocationLabel: {
-    ...typography.callout,
+  allocLabel: {
+    ...typography.subhead,
+    color: Colors.text.primary,
+    fontWeight: '500',
+  },
+  allocationRight: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+  },
+  allocPercent: {
+    ...typography.subhead,
+    color: Colors.text.primary,
+    fontWeight: '700',
+    minWidth: 36,
+    textAlign: 'right',
+  },
+  allocValue: {
+    ...typography.footnote,
+    color: Colors.text.secondary,
+    minWidth: 48,
+    textAlign: 'right',
+  },
+  donutWrapper: {
+    marginLeft: spacing.md,
+  },
+  healthScore: {
+    fontSize: 16,
+  },
+  healthScoreBold: {
+    fontSize: 32,
+    fontWeight: '700',
     color: Colors.text.primary,
   },
-  allocationValue: {
-    ...typography.callout,
+  healthScoreTotal: {
+    fontSize: 18,
+    fontWeight: '400',
+    color: Colors.text.tertiary,
+  },
+  healthStatus: {
+    ...typography.subhead,
     color: Colors.text.secondary,
-    fontWeight: '600' as const,
+    marginBottom: spacing.md,
+  },
+  healthLabel: {
+    fontWeight: '600',
+    color: Colors.text.primary,
+  },
+  healthDetail: {
+    fontWeight: '400',
+    color: Colors.text.secondary,
+  },
+  healthPills: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: spacing.sm,
+    marginBottom: spacing.lg,
+  },
+  healthPill: {
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.xs + 2,
+    borderRadius: borderRadius.full,
+    backgroundColor: Colors.background,
+    borderWidth: 1,
+    borderColor: Colors.border.medium,
+  },
+  healthPillText: {
+    ...typography.caption,
+    color: Colors.text.secondary,
+    fontWeight: '500',
+  },
+  improveButton: {
+    backgroundColor: '#34C759',
+    paddingVertical: spacing.md,
+    paddingHorizontal: spacing.lg,
+    borderRadius: borderRadius.full,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: spacing.xs,
+    alignSelf: 'center',
+  },
+  improveButtonText: {
+    ...typography.subhead,
+    color: '#FFFFFF',
+    fontWeight: '600',
+  },
+  section: {
+    marginBottom: spacing.md,
+  },
+  sectionTitle: {
+    ...typography.headline,
+    color: Colors.text.primary,
+    fontWeight: '700',
+    paddingHorizontal: spacing.lg,
+    marginBottom: spacing.md,
+  },
+  accountsScroll: {
+    paddingHorizontal: spacing.lg,
+    gap: spacing.sm,
+  },
+  accountCard: {
+    backgroundColor: Colors.card,
+    borderRadius: borderRadius.lg,
+    padding: spacing.md,
+    width: 150,
+    borderWidth: 1,
+    borderColor: Colors.border.light,
+  },
+  accountTop: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+    marginBottom: spacing.sm,
+  },
+  accountIcon: {
+    width: 32,
+    height: 32,
+    borderRadius: 8,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  accountName: {
+    ...typography.caption,
+    color: Colors.text.secondary,
+    fontWeight: '600',
+    flex: 1,
+  },
+  accountValue: {
+    ...typography.headline,
+    color: Colors.text.primary,
+    fontWeight: '700',
+  },
+  accountChange: {
+    ...typography.caption,
+    fontWeight: '600',
+    marginTop: 2,
+  },
+  addAccountCard: {
+    backgroundColor: Colors.background,
+    borderRadius: borderRadius.lg,
+    padding: spacing.md,
+    width: 130,
+    borderWidth: 1,
+    borderColor: Colors.border.medium,
+    borderStyle: 'dashed',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: spacing.sm,
+  },
+  addAccountText: {
+    ...typography.caption,
+    color: Colors.text.secondary,
+    fontWeight: '500',
+  },
+  insightsCard: {
+    backgroundColor: Colors.card,
+    marginHorizontal: spacing.lg,
+    borderRadius: borderRadius.xl,
+    borderWidth: 1,
+    borderColor: Colors.border.light,
+    overflow: 'hidden',
+  },
+  insightRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: spacing.md,
+    paddingHorizontal: spacing.lg,
+    borderBottomWidth: 1,
+    borderBottomColor: Colors.border.light,
+    gap: spacing.md,
+  },
+  insightIcon: {
+    width: 32,
+    height: 32,
+    borderRadius: 8,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  insightText: {
+    ...typography.subhead,
+    color: Colors.text.primary,
+    flex: 1,
   },
   emptyState: {
     paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.xl,
+    paddingVertical: spacing.xxxl,
     alignItems: 'center',
   },
   emptyTitle: {
@@ -440,43 +744,5 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.3,
     shadowRadius: 12,
     elevation: 8,
-  },
-  fingerprintCard: {
-    backgroundColor: Colors.card,
-    marginHorizontal: spacing.lg,
-    marginBottom: spacing.lg,
-    padding: spacing.lg,
-    borderRadius: borderRadius.lg,
-    shadowColor: Colors.shadow,
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 1,
-    shadowRadius: 8,
-    elevation: 2,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.md,
-    borderWidth: 1.5,
-    borderColor: Colors.accent + '20',
-  },
-  fingerprintIcon: {
-    width: 48,
-    height: 48,
-    borderRadius: borderRadius.md,
-    backgroundColor: Colors.accent + '15',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  fingerprintContent: {
-    flex: 1,
-  },
-  fingerprintTitle: {
-    ...typography.callout,
-    color: Colors.text.primary,
-    fontWeight: '600' as const,
-    marginBottom: 2,
-  },
-  fingerprintDescription: {
-    ...typography.caption,
-    color: Colors.text.secondary,
   },
 });

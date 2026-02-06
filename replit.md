@@ -80,6 +80,13 @@ The app uses Plaid and SnapTrade for financial account linking. Required secrets
 - Tab-based navigation (Home, Portfolio, Insights, Settings)
 
 ## Recent Changes
+- **Home Page Redesign (Feb 2026)**:
+  - Greeting header with time-based salutation and date
+  - Dark-themed Net Worth card with total value, gain/loss, and green line chart
+  - Allocation card with SVG donut chart and percentage/dollar legend
+  - Portfolio Health score card (0-100) with status, category pills, "Improve my portfolio" button
+  - Connected Accounts horizontal scroll with per-type cards and "Add account" button
+  - Insights section with icon-prefixed actionable items
 - **UI Design Improvements (Feb 2026)**:
   - Added portfolio summary card at top of Portfolio page showing total value, gain/loss with percentage pill, and asset count
   - Added asset type icons (stocks, crypto, real estate, etc.) for visual recognition
