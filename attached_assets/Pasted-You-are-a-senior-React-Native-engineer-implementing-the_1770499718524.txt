@@ -1,0 +1,226 @@
+You are a senior React Native engineer implementing the Connected Accounts section of the Home screen for a premium fintech mobile app.
+
+Stack:
+
+React Native + Expo
+
+TypeScript
+
+No backend logic yet (use mock data)
+
+Styling must match premium dark fintech theme
+
+This section must be horizontally scrollable account cards.
+
+Section Goals
+
+The component shows:
+
+Accounts synced via Plaid (banks/brokers)
+
+Manual accounts (cash, real estate, etc.)
+
+Quick access to add new account
+
+The section must:
+
+Be compact
+
+Be glanceable
+
+Encourage tapping into deeper screens
+
+Component Structure
+
+Create component:
+
+components/home/ConnectedAccountsSection.tsx
+
+
+It must include:
+
+Section header
+
+Horizontal ScrollView with cards
+
+Section Header
+
+Row layout:
+
+Left:
+
+Title: "Connected Accounts"
+Font: typography.title
+Color: colors.textPrimary
+
+
+Right:
+Touchable text button:
+
+"See all"
+Color: colors.accent
+Font: typography.body
+
+
+Spacing:
+
+marginBottom: spacing.md
+
+Horizontal Scroll Container
+
+Use:
+
+<ScrollView
+ horizontal
+ showsHorizontalScrollIndicator={false}
+ contentContainerStyle={{ paddingRight: spacing.lg }}
+>
+
+
+Cards must have:
+
+marginRight: spacing.md
+
+Account Card Component
+
+Create reusable component:
+
+components/home/AccountCard.tsx
+
+
+Card style:
+
+width: 180
+height: 110
+borderRadius: 20
+padding: spacing.md
+backgroundColor: colors.cardSoft
+justifyContent: space-between
+
+Card Layout
+
+Top row:
+Left:
+
+Institution logo placeholder (circle)
+
+width: 28
+height: 28
+borderRadius: 14
+backgroundColor: colors.card
+
+
+Right:
+Small label badge:
+Example: "Broker" / "Bank" / "Crypto"
+
+Badge style:
+
+paddingHorizontal: 8
+paddingVertical: 3
+borderRadius: 10
+backgroundColor: colors.card
+fontSize: 11
+color: colors.textSecondary
+
+
+Middle:
+Account name:
+
+fontSize: 14
+fontWeight: 600
+color: colors.textPrimary
+
+
+Bottom:
+Balance:
+
+fontSize: 18
+fontWeight: 700
+color: colors.textPrimary
+
+
+Daily change under balance:
+Positive → colors.positive
+Negative → colors.negative
+Font size 12.
+
+Add Account Card (Last Card)
+
+Create special card variant:
+
+Same size as account card.
+
+Center content vertically & horizontally.
+
+Plus icon:
+Large:
+
+fontSize: 32
+color: colors.accent
+
+
+Text below:
+
+"Add account"
+color: colors.accent
+
+
+Card border:
+
+borderWidth: 1
+borderColor: colors.accent
+backgroundColor: transparent
+
+
+This card must be the last item in scroll list.
+
+Mock Data
+
+Create temporary data array:
+
+Example:
+
+Wealthsimple — $24,500 (+1.2%)
+TD Bank — $8,200 (+0.1%)
+Coinbase — $5,100 (-2.4%)
+Rental Property — $310,000 (+0.3%)
+
+
+Render using map().
+
+Interaction Requirements
+
+Tapping:
+
+Account card → navigate to AccountDetails screen (stub)
+
+Add account card → navigate to AddAccount screen (stub)
+
+“See all” → navigate to AccountsList screen (stub)
+
+Use placeholder navigation functions.
+
+Animations
+
+On mount:
+Cards should fade-in + slide-up slightly using Reanimated.
+
+Duration:
+300–400ms staggered animation.
+
+Deliverables
+
+Produce:
+
+ConnectedAccountsSection component
+
+AccountCard component
+
+AddAccountCard variant
+
+Mock data
+
+Navigation stubs
+
+Focus on pixel-perfect premium look and horizontal scroll UX.

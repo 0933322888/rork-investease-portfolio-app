@@ -1,7 +1,7 @@
 import { router } from 'expo-router';
 import { 
-  ChevronRight, TrendingUp, AlertCircle, DollarSign,
-  Shield, BarChart3, Landmark, CreditCard, Bitcoin,
+  ChevronRight, AlertCircle, DollarSign,
+  Landmark,
 } from 'lucide-react-native';
 import React, { useMemo, useEffect } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Dimensions, Platform } from 'react-native';
@@ -13,6 +13,7 @@ import { spacing, borderRadius } from '@/constants/spacing';
 import { typography } from '@/constants/typography';
 import { usePortfolio } from '@/contexts/PortfolioContext';
 import { ASSET_TYPES, AssetType } from '@/types/assets';
+import ConnectedAccountsSection from '@/components/home/ConnectedAccountsSection';
 
 const { width } = Dimensions.get('window');
 const CHART_WIDTH = width - spacing.lg * 4;
@@ -189,23 +190,6 @@ function Chip({ label }: { label: string }) {
   );
 }
 
-function AccountCard({ name, value, change, icon: Icon, color }: { name: string; value: number; change: number; icon: any; color: string }) {
-  const isUp = change >= 0;
-  return (
-    <View style={styles.accountCard}>
-      <View style={[styles.accountIcon, { backgroundColor: color + '18' }]}>
-        <Icon size={18} color={color} />
-      </View>
-      <Text style={styles.accountName} numberOfLines={1}>{name}</Text>
-      <Text style={styles.accountValue}>
-        ${value.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
-      </Text>
-      <Text style={[styles.accountChange, { color: isUp ? Colors.positive : Colors.negative }]}>
-        {isUp ? '+' : '-'}${Math.abs(change).toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
-      </Text>
-    </View>
-  );
-}
 
 function InsightCard({ icon: Icon, text, color }: { icon: any; text: string; color: string }) {
   return (
@@ -245,45 +229,6 @@ export default function HomeScreen() {
   const health = useMemo(() => getHealthScore(allocationData), [allocationData]);
   const isPositive = totalGain >= 0;
 
-  const connectedAccounts = useMemo(() => {
-    const grouped: Record<string, { total: number; count: number }> = {};
-    assets.forEach(asset => {
-      const key = asset.type;
-      if (!grouped[key]) grouped[key] = { total: 0, count: 0 };
-      grouped[key].total += asset.quantity * asset.currentPrice;
-      grouped[key].count++;
-    });
-
-    const typeIcons: Record<string, any> = {
-      stocks: TrendingUp,
-      crypto: Bitcoin,
-      cash: CreditCard,
-      'real-estate': Landmark,
-      commodities: BarChart3,
-      'fixed-income': Shield,
-    };
-
-    const typeLabels: Record<string, string> = {
-      stocks: 'Stocks',
-      crypto: 'Crypto',
-      cash: 'Cash',
-      'real-estate': 'Real Estate',
-      commodities: 'Commodities',
-      'fixed-income': 'Bonds',
-    };
-
-    return Object.entries(grouped)
-      .map(([type, data]) => ({
-        name: typeLabels[type] || type,
-        value: data.total,
-        change: (Math.random() - 0.3) * data.total * 0.01,
-        icon: typeIcons[type] || TrendingUp,
-        color: ALLOC_COLORS[type] || Colors.other,
-        type,
-      }))
-      .sort((a, b) => b.value - a.value)
-      .slice(0, 5);
-  }, [assets]);
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
@@ -380,35 +325,9 @@ export default function HomeScreen() {
           </AnimatedCard>
         )}
 
-        {connectedAccounts.length > 0 && (
-          <AnimatedCard delay={320}>
-            <Text style={styles.sectionTitle}>Connected Accounts</Text>
-            <ScrollView
-              horizontal
-              showsHorizontalScrollIndicator={false}
-              contentContainerStyle={styles.accountsScroll}
-            >
-              {connectedAccounts.map((account, index) => (
-                <AccountCard
-                  key={index}
-                  name={account.name}
-                  value={account.value}
-                  change={account.change}
-                  icon={account.icon}
-                  color={account.color}
-                />
-              ))}
-              <TouchableOpacity
-                style={styles.addAccountCard}
-                onPress={() => router.push('/connect-plaid')}
-                activeOpacity={0.7}
-              >
-                <Text style={styles.addAccountPlus}>+</Text>
-                <Text style={styles.addAccountText}>Add account</Text>
-              </TouchableOpacity>
-            </ScrollView>
-          </AnimatedCard>
-        )}
+        <AnimatedCard delay={320}>
+          <ConnectedAccountsSection />
+        </AnimatedCard>
 
         <AnimatedCard delay={400}>
           <Text style={styles.sectionTitle}>Insights</Text>
@@ -620,62 +539,6 @@ const styles = StyleSheet.create({
     color: Colors.text.primary,
     paddingHorizontal: spacing.lg,
     marginBottom: spacing.md,
-  },
-  accountsScroll: {
-    paddingHorizontal: spacing.lg,
-  },
-  accountCard: {
-    width: 180,
-    borderRadius: 20,
-    backgroundColor: Colors.cardSoft,
-    padding: spacing.md,
-    marginRight: spacing.md,
-  },
-  accountIcon: {
-    width: 36,
-    height: 36,
-    borderRadius: 10,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: spacing.sm,
-  },
-  accountName: {
-    fontSize: 12,
-    color: Colors.text.secondary,
-    fontWeight: '600',
-    marginBottom: 6,
-  },
-  accountValue: {
-    fontSize: 16,
-    fontWeight: '700',
-    color: Colors.text.primary,
-  },
-  accountChange: {
-    fontSize: 12,
-    fontWeight: '600',
-    marginTop: 4,
-  },
-  addAccountCard: {
-    width: 180,
-    borderRadius: 20,
-    backgroundColor: 'rgba(255,255,255,0.03)',
-    padding: spacing.md,
-    borderWidth: 1,
-    borderColor: Colors.border.medium,
-    borderStyle: 'dashed',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: spacing.sm,
-  },
-  addAccountPlus: {
-    fontSize: 28,
-    fontWeight: '300',
-    color: Colors.text.secondary,
-  },
-  addAccountText: {
-    fontSize: 12,
-    color: Colors.text.secondary,
-    fontWeight: '500',
   },
   insightCard: {
     borderRadius: 16,
