@@ -252,10 +252,10 @@ export default function RiskFingerprintScreen() {
 }
 
 function getColorForScore(score: number): string {
-  if (score > 70) return '#FF3B30';
-  if (score > 50) return '#FF9500';
+  if (score > 70) return '#FF6B6B';
+  if (score > 50) return '#F5B14C';
   if (score > 30) return '#FFCC00';
-  return '#00C853';
+  return '#32D583';
 }
 
 const styles = StyleSheet.create({

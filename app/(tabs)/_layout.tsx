@@ -13,11 +13,13 @@ export default function TabLayout() {
         tabBarInactiveTintColor: Colors.text.tertiary,
         headerShown: false,
         tabBarStyle: {
-          backgroundColor: '#111122',
+          backgroundColor: Colors.card,
           borderTopWidth: 1,
-          borderTopColor: 'rgba(255,255,255,0.06)',
+          borderTopColor: Colors.border.light,
           paddingTop: 8,
           height: 88,
+          borderTopLeftRadius: 24,
+          borderTopRightRadius: 24,
         },
         tabBarLabelStyle: {
           fontSize: 11,
@@ -78,17 +80,18 @@ export default function TabLayout() {
 
 const styles = StyleSheet.create({
   addButton: {
-    width: 52,
-    height: 52,
-    borderRadius: 26,
+    width: 64,
+    height: 64,
+    borderRadius: 32,
     backgroundColor: Colors.accent,
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: 20,
+    position: 'relative',
+    top: -24,
     shadowColor: Colors.accent,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.35,
-    shadowRadius: 10,
-    elevation: 8,
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.4,
+    shadowRadius: 12,
+    elevation: 10,
   },
 });

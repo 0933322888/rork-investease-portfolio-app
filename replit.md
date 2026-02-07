@@ -109,10 +109,16 @@ The app uses Plaid and SnapTrade for financial account linking. Required secrets
 - Combined backend API with static file serving on port 5000
 
 ## Design Notes
-- **Theme**: Dark mode first (#0D0D14 background, #1A1A2E card, #22223A elevated card)
-- **Color Scheme**: Blue accent (#007AFF), green for gains (#34C759), red for losses (#FF3B30)
-- **Text Colors**: White primary, rgba(255,255,255,0.6) secondary, rgba(255,255,255,0.35) tertiary
+- **Theme**: Dark mode first (bg #0B1220, card #111A2E, cardSoft #16233B)
+- **Color Scheme**: Purple-blue accent (#6C8CFF), green for gains (#32D583), red for losses (#FF6B6B)
+- **Asset Colors**: Stocks #6C8CFF, Crypto #F5B14C, Cash #58D68D, Real Estate #FF7A7A, Other #B8C1EC
+- **Text Colors**: White primary (#FFFFFF), blue-tinted secondary (#9FB0D0)
 - **Premium Badge**: Sparkles icon with pill shape
 - **Locked Items**: Use opacity 0.7 and lock icons to indicate premium-only features
-- **Charts**: SVG-based line charts with gradient fills and data point markers
-- **Cards**: 20px border radius, subtle borders (rgba(255,255,255,0.08))
+- **Charts**: SVG-based sparkline with gradient fill
+- **Cards**: 24px border radius, shadow (shadowRadius: 20, shadowOpacity: 0.3)
+- **Chips**: borderRadius 20, cardSoft background, 6/12 padding
+- **CTA Button**: Green #3FAF7F, height 48, borderRadius 24
+- **Connected Account Cards**: 180px wide, borderRadius 20, cardSoft background
+- **Tab Bar**: Card background with rounded top corners (24px), 64px floating + button with accent glow
+- **Animations**: Reanimated fade+slide-up on native, plain View fallback on web

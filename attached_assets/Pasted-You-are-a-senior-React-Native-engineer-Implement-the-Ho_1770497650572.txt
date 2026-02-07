@@ -1,0 +1,271 @@
+You are a senior React Native engineer.
+
+Implement the Home screen UI styling of a premium fintech portfolio app based on a provided mockup.
+
+Tech stack:
+
+React Native + Expo
+
+TypeScript
+
+React Navigation
+
+react-native-svg (for charts placeholders)
+
+react-native-reanimated (for subtle animations)
+
+No web code
+
+The goal is pixel-close visual styling, not backend logic.
+
+Global Design System
+Theme structure
+
+Create a theme.ts file exporting:
+
+Colors (Dark mode default)
+export const colors = {
+  bg: "#0B1220",
+  card: "#111A2E",
+  cardSoft: "#16233B",
+  textPrimary: "#FFFFFF",
+  textSecondary: "#9FB0D0",
+  positive: "#32D583",
+  negative: "#FF6B6B",
+  accent: "#6C8CFF",
+
+  stocks: "#6C8CFF",
+  crypto: "#F5B14C",
+  cash: "#58D68D",
+  realEstate: "#FF7A7A",
+  other: "#B8C1EC",
+};
+
+Spacing scale
+export const spacing = {
+  xs: 6,
+  sm: 10,
+  md: 16,
+  lg: 24,
+  xl: 32,
+};
+
+Typography
+export const typography = {
+  hero: { fontSize: 36, fontWeight: "700" },
+  title: { fontSize: 22, fontWeight: "600" },
+  subtitle: { fontSize: 16, fontWeight: "500" },
+  body: { fontSize: 14 },
+  caption: { fontSize: 12 },
+};
+
+Screen Layout
+
+Create screen: HomeScreen.tsx
+
+Use ScrollView with vertical padding and SafeAreaView.
+
+Background:
+
+backgroundColor: colors.bg
+
+
+All content inside padded container:
+
+paddingHorizontal: spacing.lg
+
+Header Section
+
+Row layout:
+
+Left: greeting + date
+
+Right: circular avatar placeholder
+
+Greeting:
+
+Font: subtitle
+
+Color: textSecondary
+
+Name:
+
+Font: title
+
+Color: textPrimary
+
+Avatar:
+
+width: 40
+height: 40
+borderRadius: 20
+backgroundColor: colors.cardSoft
+
+Net Worth Hero Card
+
+Create reusable Card component:
+
+borderRadius: 24
+padding: spacing.lg
+backgroundColor: colors.card
+shadowColor: "#000"
+shadowOpacity: 0.3
+shadowRadius: 20
+
+
+Inside hero card:
+
+Net worth value:
+
+fontSize: 40
+fontWeight: "700"
+color: white
+
+
+Daily change row:
+
+Positive text uses colors.positive
+
+Add a placeholder sparkline:
+
+Thin line using react-native-svg
+
+Height: 50
+
+Allocation Card
+
+Two-column layout:
+
+Left column:
+Legend rows:
+
+colored dot (8px circle)
+
+category name
+
+percentage right-aligned
+
+Right column:
+Donut chart placeholder:
+
+Circle using SVG
+
+Size: 140x140
+
+Portfolio Health Card
+
+Row layout:
+Left:
+
+Title
+
+Subtitle text
+
+Right:
+Large score:
+
+fontSize: 32
+fontWeight: "700"
+
+
+Chips row:
+
+Create Chip component:
+
+paddingVertical: 6
+paddingHorizontal: 12
+borderRadius: 20
+backgroundColor: colors.cardSoft
+marginRight: 8
+
+
+CTA Button:
+
+Rounded gradient-like button:
+
+height: 48
+borderRadius: 24
+backgroundColor: "#3FAF7F"
+justifyContent: "center"
+alignItems: "center"
+
+
+Text:
+Improve my portfolio
+
+Connected Accounts (Horizontal Scroll)
+
+Horizontal ScrollView.
+
+Account card:
+
+width: 180
+borderRadius: 20
+backgroundColor: colors.cardSoft
+padding: spacing.md
+marginRight: spacing.md
+
+
+Include:
+
+Account name
+
+Balance
+
+Daily change color coded
+
+Add last card:
+“+ Add account”
+
+Insights List
+
+Vertical stack of cards:
+
+Insight card:
+
+borderRadius: 16
+backgroundColor: colors.cardSoft
+padding: spacing.md
+marginBottom: spacing.sm
+flexDirection: "row"
+justifyContent: "space-between"
+
+Bottom Tab Bar (Mock)
+
+Create a fixed bottom bar:
+
+height: 70
+backgroundColor: colors.card
+borderTopLeftRadius: 24
+borderTopRightRadius: 24
+
+
+Center floating button:
+
+width: 64
+height: 64
+borderRadius: 32
+backgroundColor: colors.accent
+position: "absolute"
+top: -24
+alignSelf: "center"
+
+Animation
+
+Add subtle fade-in using Reanimated:
+
+Cards fade and slide up on mount.
+
+Deliverable
+
+Produce:
+
+Reusable components (Card, Chip, AccountCard, InsightCard)
+
+HomeScreen fully styled
+
+No backend logic
+
+Clean, production-ready component structure
+
+Focus on matching the premium fintech look of the mockup.

@@ -24,14 +24,14 @@ const screens = [
     title: 'All your investments\nin one place',
     description: 'Track stocks, crypto, real estate, and more. No matter where they are.',
     icon: TrendingUp,
-    color: '#007AFF',
+    color: '#6C8CFF',
     bgGradient: ['#0D1A2E', '#101428'],
   },
   {
     title: 'Clear insights\nat a glance',
     description: 'Understand your portfolio allocation and performance instantly.',
     icon: PieChart,
-    color: '#34C759',
+    color: '#32D583',
     bgGradient: ['#0D1E14', '#0D1410'],
   },
   {
