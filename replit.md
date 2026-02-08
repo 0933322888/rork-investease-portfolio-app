@@ -14,7 +14,8 @@ A cross-platform React Native investment portfolio tracking app built with Expo.
 ### Backend
 - **API Framework**: Hono (lightweight web framework)
 - **RPC**: tRPC for type-safe API calls
-- **External Services**: Plaid, SnapTrade, and Coinbase integrations for financial account linking
+- **External Services**: Plaid, SnapTrade, Coinbase, and FMP (Financial Modeling Prep) integrations
+- **Market Data**: FMP API via `/stable/` endpoints for real-time quotes, historical prices, and company profiles
 
 ### Tech Stack
 - **Runtime**: Bun
@@ -65,10 +66,17 @@ The app uses Plaid and SnapTrade for financial account linking. Required secrets
 - `PLAID_SECRET` - Plaid API secret
 - `SNAPTRADE_CLIENT_ID` - SnapTrade API client ID
 - `SNAPTRADE_CONSUMER_KEY` - SnapTrade API consumer key
+- `FMP_API_KEY` - Financial Modeling Prep API key (for market prices, historical data, profiles)
 
 ## API Endpoints
 - `GET /api/health` - Health check
-- `/api/trpc/*` - tRPC endpoints (Plaid, SnapTrade, and Coinbase integrations)
+- `/api/trpc/*` - tRPC endpoints (Plaid, SnapTrade, Coinbase, and Market Data)
+  - `marketData.getQuote` - Single symbol real-time quote
+  - `marketData.getQuotes` - Multiple symbol quotes (fetched in parallel)
+  - `marketData.getHistoricalPrices` - Historical prices with range filter (1M/3M/6M/1Y/5Y)
+  - `marketData.getProfile` - Company profile (sector, country, industry, marketCap)
+  - `marketData.getProfiles` - Multiple company profiles
+  - `marketData.getMarketData` - Unified facade with auto symbol mapping (crypto/commodity)
 
 ## Key Features
 - Portfolio tracking for multiple asset types
@@ -80,6 +88,16 @@ The app uses Plaid and SnapTrade for financial account linking. Required secrets
 - 5-tab navigation (Home, Portfolio, + Add, Insights, Settings) with centered floating Add button
 
 ## Recent Changes
+- **Market Data Service (Feb 2026)**:
+  - Added FMP (Financial Modeling Prep) integration using `/stable/` API endpoints
+  - Real-time quotes for stocks, crypto (auto-maps BTC→BTCUSD)
+  - Historical price data with range filtering (1M/3M/6M/1Y/5Y)
+  - Company profiles with sector, country, industry, marketCap
+  - 5-minute in-memory cache for quotes, 30-day cache for profiles
+  - Unified facade service with symbol normalization
+  - tRPC routes for all market data endpoints
+  - Note: Commodity quotes (XAUUSD/XAGUSD) require FMP premium plan
+  - Note: Batch quotes fetched individually (free tier limitation)
 - **Dark Mode Redesign (Feb 2026)**:
   - Switched entire app to dark-first color scheme (#0D0D14 background, #1A1A2E cards)
   - Updated all screens (home, portfolio, insights, settings, modals) for dark mode
