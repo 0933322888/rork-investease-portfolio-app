@@ -193,7 +193,11 @@ function Chip({ label }: { label: string }) {
 
 function InsightCard({ icon: Icon, text, color }: { icon: any; text: string; color: string }) {
   return (
-    <TouchableOpacity style={styles.insightCard} activeOpacity={0.7}>
+    <TouchableOpacity
+      style={styles.insightCard}
+      activeOpacity={0.7}
+      onPress={() => router.push('/(tabs)/insights')}
+    >
       <View style={[styles.insightIcon, { backgroundColor: color + '18' }]}>
         <Icon size={16} color={color} />
       </View>
@@ -363,7 +367,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   scrollContent: {
-    paddingBottom: spacing.xxxl + spacing.xl,
+    paddingBottom: 160,
   },
   header: {
     flexDirection: 'row',
