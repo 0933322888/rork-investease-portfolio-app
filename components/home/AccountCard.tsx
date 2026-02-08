@@ -14,6 +14,7 @@ interface AccountCardProps {
   color: string;
   delay?: number;
   onPress?: () => void;
+  noMargin?: boolean;
 }
 
 function AnimatedWrapper({ children, delay = 0, style }: { children: React.ReactNode; delay?: number; style?: any }) {
@@ -37,13 +38,13 @@ function AnimatedWrapper({ children, delay = 0, style }: { children: React.React
   return <Animated.View style={[style, animatedStyle]}>{children}</Animated.View>;
 }
 
-export function AccountCard({ name, institution, badge, balance, dailyChange, color, delay = 0, onPress }: AccountCardProps) {
+export function AccountCard({ name, institution, badge, balance, dailyChange, color, delay = 0, onPress, noMargin }: AccountCardProps) {
   const isPositive = dailyChange >= 0;
   const changePercent = Math.abs(dailyChange);
 
   return (
     <AnimatedWrapper delay={delay}>
-      <TouchableOpacity style={styles.card} activeOpacity={0.8} onPress={onPress}>
+      <TouchableOpacity style={[styles.card, noMargin && { marginRight: 0 }]} activeOpacity={0.8} onPress={onPress}>
         <View style={styles.topRow}>
           <View style={styles.logo}>
             <Text style={[styles.logoText, { color }]}>{institution.charAt(0)}</Text>

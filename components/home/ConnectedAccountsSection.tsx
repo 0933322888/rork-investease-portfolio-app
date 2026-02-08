@@ -1,5 +1,5 @@
-import React from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
+import React, { useRef } from 'react';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Platform } from 'react-native';
 import { router } from 'expo-router';
 import Colors from '@/constants/colors';
 import { spacing } from '@/constants/spacing';
@@ -71,29 +71,63 @@ export default function ConnectedAccountsSection() {
           <Text style={styles.seeAll}>See all</Text>
         </TouchableOpacity>
       </View>
-      <ScrollView
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        contentContainerStyle={styles.scrollContent}
-      >
-        {MOCK_ACCOUNTS.map((account, index) => (
-          <AccountCard
-            key={account.id}
-            name={account.id}
-            institution={account.institution}
-            badge={account.badge}
-            balance={account.balance}
-            dailyChange={account.dailyChangePercent}
-            color={account.color}
-            delay={index * 80}
-            onPress={() => handleAccountPress(account)}
+      {Platform.OS === 'web' ? (
+        <div
+          style={{
+            display: 'flex',
+            flexDirection: 'row' as const,
+            overflowX: 'auto' as const,
+            scrollbarWidth: 'none' as const,
+            WebkitOverflowScrolling: 'touch' as const,
+            paddingLeft: spacing.lg,
+            paddingRight: spacing.lg,
+            gap: spacing.md,
+          }}
+        >
+          {MOCK_ACCOUNTS.map((account, index) => (
+            <AccountCard
+              key={account.id}
+              name={account.id}
+              institution={account.institution}
+              badge={account.badge}
+              balance={account.balance}
+              dailyChange={account.dailyChangePercent}
+              color={account.color}
+              delay={index * 80}
+              onPress={() => handleAccountPress(account)}
+              noMargin
+            />
+          ))}
+          <AddAccountCard
+            delay={MOCK_ACCOUNTS.length * 80}
+            onPress={handleAddPress}
           />
-        ))}
-        <AddAccountCard
-          delay={MOCK_ACCOUNTS.length * 80}
-          onPress={handleAddPress}
-        />
-      </ScrollView>
+        </div>
+      ) : (
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={styles.scrollContent}
+        >
+          {MOCK_ACCOUNTS.map((account, index) => (
+            <AccountCard
+              key={account.id}
+              name={account.id}
+              institution={account.institution}
+              badge={account.badge}
+              balance={account.balance}
+              dailyChange={account.dailyChangePercent}
+              color={account.color}
+              delay={index * 80}
+              onPress={() => handleAccountPress(account)}
+            />
+          ))}
+          <AddAccountCard
+            delay={MOCK_ACCOUNTS.length * 80}
+            onPress={handleAddPress}
+          />
+        </ScrollView>
+      )}
     </View>
   );
 }
