@@ -1,0 +1,241 @@
+You are a senior backend engineer implementing the Market Price Service for a mobile portfolio tracker.
+
+Tech stack:
+
+Node.js + Express
+
+TypeScript
+
+Axios
+
+PostgreSQL (or simple in-memory cache for MVP)
+
+This is a backend-only service
+
+Goal:
+Provide real-time and historical prices for all assets in the app:
+
+Stocks / ETFs (SnapTrade holdings)
+
+Crypto (Coinbase holdings)
+
+Commodities (gold/silver)
+
+Indexes
+
+Historical prices for charts
+
+Metadata for portfolio risk analysis
+
+This service will be called by the Portfolio Engine.
+
+FMP API Setup
+
+Base URL:
+
+https://financialmodelingprep.com/api/v3
+
+
+Store API key in env:
+
+FMP_API_KEY=xxxx
+
+
+Create folder:
+
+server/src/services/marketData/
+
+
+Files:
+
+fmpClient.ts
+
+priceService.ts
+
+historicalService.ts
+
+symbolMapper.ts
+
+1) FMP Client
+
+Create reusable axios instance:
+
+GET {baseUrl}/{endpoint}?apikey=FMP_API_KEY
+
+
+Add:
+
+Timeout
+
+Error handling
+
+Simple retry (2 retries)
+
+Export:
+
+fmpClient.get(endpoint)
+
+2) Real-Time Price Service
+
+Create function:
+
+getQuotes(symbols: string[]): Promise<MarketQuote[]>
+
+
+Use endpoint:
+
+/quote/{symbols}
+
+
+Supports comma-separated symbols.
+
+Example:
+
+/quote/AAPL,TSLA,BTCUSD,SPY
+
+
+Return unified model:
+
+type MarketQuote = {
+  symbol: string
+  price: number
+  changePercent: number
+  dayChange: number
+}
+
+3) Crypto Price Mapping
+
+FMP crypto symbols format:
+
+BTCUSD
+ETHUSD
+SOLUSD
+
+
+Create helper:
+
+mapCryptoSymbol(symbol: string) => `${symbol}USD`
+
+
+Example:
+BTC → BTCUSD
+
+4) Commodities Support
+
+We need gold & silver.
+
+Symbols:
+
+Gold → XAUUSD
+Silver → XAGUSD
+
+
+Add to symbol mapper.
+
+5) Historical Prices (Charts)
+
+Create function:
+
+getHistoricalPrices(symbol: string, range: "1M" | "3M" | "6M" | "1Y" | "5Y")
+
+
+Use endpoint:
+
+/historical-price-full/{symbol}?serietype=line
+
+
+Return simplified model:
+
+type HistoricalPoint = {
+  date: string
+  price: number
+}
+
+
+Limit data points based on range.
+
+6) Sector & Country Metadata (Health Score)
+
+Needed for the killer feature.
+
+Create function:
+
+getCompanyProfile(symbol: string)
+
+
+Endpoint:
+
+/profile/{symbol}
+
+
+Extract:
+
+sector
+country
+industry
+marketCap
+
+
+Cache this data long-term (30 days).
+
+7) Price Cache Layer
+
+Create in-memory cache:
+
+priceCache[symbol] = {
+  quote,
+  timestamp
+}
+
+
+Cache duration:
+
+5 minutes
+
+
+Flow:
+
+If cached → return cached
+
+If stale → fetch from FMP
+
+This prevents API limit issues.
+
+8) Unified Market Data Service
+
+Create facade service:
+
+getMarketDataForSymbols(symbols[])
+
+
+This service:
+
+Deduplicates symbols
+
+Maps crypto & commodities symbols
+
+Fetches quotes from FMP
+
+Returns normalized quotes
+
+This becomes the single pricing entry point for the whole app.
+
+Deliverables
+
+Implement:
+
+FMP client
+
+Real-time quotes service
+
+Historical price service
+
+Company metadata service
+
+Symbol mapper
+
+5-minute caching layer
+
+Unified market data facade
+
+Focus on clean, production-ready TypeScript.
