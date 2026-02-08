@@ -1,5 +1,5 @@
 import { router } from 'expo-router';
-import { X, TrendingUp, Bitcoin, Gem, Receipt, Home, Wallet, Check } from 'lucide-react-native';
+import { X, TrendingUp, Bitcoin, Gem, Receipt, Home, Wallet, Check, Link2 } from 'lucide-react-native';
 import React, { useState } from 'react';
 import {
   View,
@@ -232,6 +232,29 @@ export default function AddAssetScreen() {
               )}
               {selectedType === 'crypto' && (
                 <>
+                  <TouchableOpacity
+                    style={styles.coinbaseConnectCard}
+                    onPress={() => router.push('/connect-coinbase' as any)}
+                    activeOpacity={0.7}
+                  >
+                    <View style={styles.coinbaseLeft}>
+                      <View style={styles.coinbaseLogo}>
+                        <Text style={styles.coinbaseLogoText}>C</Text>
+                      </View>
+                      <View>
+                        <Text style={styles.coinbaseTitle}>Connect Coinbase</Text>
+                        <Text style={styles.coinbaseSubtitle}>Auto-import crypto balances</Text>
+                      </View>
+                    </View>
+                    <Link2 size={18} color={Colors.accent} />
+                  </TouchableOpacity>
+
+                  <View style={styles.dividerRow}>
+                    <View style={styles.dividerLine} />
+                    <Text style={styles.dividerText}>or add manually</Text>
+                    <View style={styles.dividerLine} />
+                  </View>
+
                   <View style={styles.formGroup}>
                     <Text style={styles.formLabel}>Crypto Symbol</Text>
                     <TextInput
@@ -241,7 +264,6 @@ export default function AddAssetScreen() {
                       placeholder="BTC"
                       placeholderTextColor={Colors.text.tertiary}
                       autoCapitalize="characters"
-                      autoFocus
                       returnKeyType="next"
                     />
                   </View>
@@ -591,5 +613,57 @@ const styles = StyleSheet.create({
     ...typography.footnote,
     color: Colors.text.secondary,
     textAlign: 'center' as const,
+  },
+  coinbaseConnectCard: {
+    flexDirection: 'row' as const,
+    alignItems: 'center' as const,
+    justifyContent: 'space-between' as const,
+    backgroundColor: Colors.card,
+    borderWidth: 1,
+    borderColor: Colors.accent + '30',
+    borderRadius: borderRadius.lg,
+    padding: spacing.md,
+  },
+  coinbaseLeft: {
+    flexDirection: 'row' as const,
+    alignItems: 'center' as const,
+    gap: spacing.md,
+  },
+  coinbaseLogo: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: '#0052FF',
+    alignItems: 'center' as const,
+    justifyContent: 'center' as const,
+  },
+  coinbaseLogoText: {
+    color: '#FFFFFF',
+    fontSize: 18,
+    fontWeight: '700' as const,
+  },
+  coinbaseTitle: {
+    ...typography.subhead,
+    color: Colors.text.primary,
+    fontWeight: '600' as const,
+  },
+  coinbaseSubtitle: {
+    ...typography.caption,
+    color: Colors.text.secondary,
+    marginTop: 2,
+  },
+  dividerRow: {
+    flexDirection: 'row' as const,
+    alignItems: 'center' as const,
+    gap: spacing.md,
+  },
+  dividerLine: {
+    flex: 1,
+    height: 1,
+    backgroundColor: Colors.border.light,
+  },
+  dividerText: {
+    ...typography.caption,
+    color: Colors.text.tertiary,
   },
 });

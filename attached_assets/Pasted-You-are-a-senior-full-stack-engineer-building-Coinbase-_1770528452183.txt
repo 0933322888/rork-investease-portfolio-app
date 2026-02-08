@@ -1,0 +1,262 @@
+You are a senior full-stack engineer building Coinbase integration for a mobile portfolio tracker.
+
+Tech stack:
+
+React Native + Expo (frontend)
+
+Node.js + Express (backend)
+
+TypeScript everywhere
+
+Secure API key storage required
+
+This is read-only portfolio tracking, NOT trading
+
+Goal:
+Allow users to connect Coinbase using read-only API keys, sync balances, and convert them to portfolio value using existing price service.
+
+Overview of Flow
+
+User journey:
+
+User taps Add Account → Crypto → Coinbase
+
+App explains how to create read-only Coinbase API key
+
+User pastes:
+
+API Key
+
+API Secret
+
+Backend validates keys
+
+Backend fetches crypto balances
+
+Assets appear in portfolio
+
+Background sync refreshes balances daily
+
+Security is critical.
+
+Coinbase API Basics
+
+Use:
+Coinbase Advanced Trade API
+
+Base URL:
+
+https://api.coinbase.com/api/v3/brokerage
+
+
+We only need endpoints:
+
+Get accounts
+GET /accounts
+
+Get account balances
+GET /accounts/{account_uuid}
+
+
+We only fetch balances — no trading endpoints.
+
+Backend Implementation
+
+Create service:
+
+server/src/integrations/coinbase/
+
+
+Files:
+
+coinbaseClient.ts
+
+coinbaseService.ts
+
+coinbaseRoutes.ts
+
+1) Coinbase Client (Auth + Requests)
+
+Implement Coinbase request signing.
+
+Headers required:
+
+CB-ACCESS-KEY
+CB-ACCESS-SIGN
+CB-ACCESS-TIMESTAMP
+CB-ACCESS-PASSPHRASE (optional)
+
+
+Signature:
+
+signature = HMAC_SHA256(
+  timestamp + method + requestPath + body,
+  apiSecret
+)
+
+
+Return Base64 encoded signature.
+
+Create helper:
+
+createCoinbaseHeaders(method, path, body, apiKey, apiSecret)
+
+2) Fetch User Crypto Accounts
+
+Function:
+
+getCoinbaseAccounts(apiKey, apiSecret)
+
+
+Call:
+
+GET /accounts
+
+
+Return simplified model:
+
+type CoinbaseAsset = {
+  symbol: string
+  name: string
+  balance: number
+}
+
+
+Filter:
+
+Remove zero balances
+
+3) Convert to Portfolio Assets
+
+Map Coinbase assets → internal asset model:
+
+type PortfolioAsset = {
+  source: "coinbase"
+  symbol: "BTC"
+  quantity: number
+  type: "crypto"
+}
+
+
+Price lookup happens later via FMP service.
+
+4) Secure Key Storage
+
+Never store keys on device.
+
+Store encrypted in backend DB:
+
+table: crypto_connections
+- id
+- userId
+- provider = "coinbase"
+- encryptedApiKey
+- encryptedApiSecret
+
+
+Use AES encryption with server secret.
+
+5) API Routes
+
+Create routes:
+
+Connect Coinbase
+POST /crypto/coinbase/connect
+
+
+Body:
+
+apiKey
+apiSecret
+
+
+Flow:
+
+Validate by calling /accounts
+
+Store encrypted keys
+
+Return success
+
+Sync Coinbase Holdings
+POST /crypto/coinbase/sync
+
+
+Flow:
+
+Load encrypted keys
+
+Fetch balances
+
+Save assets to DB
+
+Frontend Implementation
+
+Create screen:
+
+AddCoinbaseScreen.tsx
+
+
+UI steps:
+
+Explanation card:
+“Create a read-only Coinbase API key”
+
+Steps list:
+
+Go to Coinbase → Settings → API → Create key
+
+Disable trading permissions
+
+Paste keys below
+
+Inputs:
+
+API Key field
+
+API Secret field
+
+CTA button:
+
+Connect Coinbase
+
+
+Call backend route.
+
+Success state:
+
+"Coinbase connected successfully 🎉"
+
+Background Sync
+
+Create daily cron job:
+
+syncCoinbaseHoldingsForAllUsers()
+
+
+Runs every 24h.
+
+Deliverables
+
+Implement:
+
+Backend:
+
+Coinbase client
+
+Encryption helper
+
+API routes
+
+Sync service
+
+Frontend:
+
+AddCoinbaseScreen
+
+API integration
+
+Success/error states
+
+Do NOT implement trading features.
+This is read-only portfolio tracking only.

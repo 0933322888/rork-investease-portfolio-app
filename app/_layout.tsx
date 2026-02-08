@@ -22,6 +22,7 @@ function RootLayoutNav() {
       <Stack.Screen name="add-asset" options={{ presentation: "modal", headerShown: false }} />
       <Stack.Screen name="risk-fingerprint" options={{ presentation: "modal", headerShown: false }} />
       <Stack.Screen name="connect-plaid" options={{ presentation: "modal", title: "Connect Account" }} />
+      <Stack.Screen name="connect-coinbase" options={{ presentation: "modal", headerShown: false }} />
     </Stack>
   );
 }

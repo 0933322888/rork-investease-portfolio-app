@@ -9,6 +9,7 @@ import { trpc } from '@/lib/trpc';
 const STORAGE_KEY = 'portfolio_assets';
 const ONBOARDING_KEY = 'has_completed_onboarding';
 const PLAID_ACCOUNTS_KEY = 'plaid_accounts';
+const COINBASE_CREDENTIALS_KEY = 'coinbase_credentials';
 
 export const [PortfolioProvider, usePortfolio] = createContextHook(() => {
   const queryClient = useQueryClient();
@@ -528,6 +529,99 @@ export const [PortfolioProvider, usePortfolio] = createContextHook(() => {
     saveAssetsMutation.mutate(updatedAssets);
   };
 
+  const syncCoinbaseAccount = async (apiKey: string, apiSecret: string): Promise<{ success: boolean; error?: string; assetsCount?: number }> => {
+    console.log('[Portfolio] Connecting Coinbase account...');
+
+    try {
+      const response = await fetch('/api/trpc/coinbase.connect', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ json: { apiKey, apiSecret } }),
+      });
+
+      const data = await response.json();
+      const result = data.result?.data?.json;
+
+      if (!result?.success) {
+        return { success: false, error: result?.error || 'Connection failed' };
+      }
+
+      const coinbaseAccounts = result.accounts || [];
+      console.log('[Portfolio] Coinbase accounts fetched:', coinbaseAccounts.length);
+
+      await AsyncStorage.setItem(COINBASE_CREDENTIALS_KEY, JSON.stringify({ apiKey, apiSecret }));
+
+      const newAssets: Asset[] = coinbaseAccounts.map((account: any) => {
+        const existingAsset = assets.find(
+          a => a.isCoinbaseConnected && a.coinbaseAccountId === account.uuid
+        );
+        return {
+          id: existingAsset?.id || `coinbase_${account.uuid || account.symbol}_${Date.now()}`,
+          type: 'crypto' as AssetType,
+          name: account.name || account.symbol,
+          symbol: account.symbol,
+          quantity: account.balance,
+          purchasePrice: existingAsset?.purchasePrice || 0,
+          currentPrice: existingAsset?.currentPrice || 0,
+          currency: 'USD',
+          addedAt: existingAsset?.addedAt || Date.now(),
+          coinbaseAccountId: account.uuid,
+          isCoinbaseConnected: true,
+        };
+      });
+
+      const existingNonCoinbase = assets.filter(a => !a.isCoinbaseConnected);
+      const updatedAssets = [...existingNonCoinbase, ...newAssets];
+      setAssets(updatedAssets);
+      saveAssetsMutation.mutate(updatedAssets);
+
+      console.log('[Portfolio] Coinbase assets added:', newAssets.length);
+      return { success: true, assetsCount: newAssets.length };
+    } catch (error: any) {
+      console.error('[Portfolio] Error connecting Coinbase:', error);
+      return { success: false, error: error.message || 'Failed to connect' };
+    }
+  };
+
+  const refreshCoinbaseBalances = async () => {
+    console.log('[Portfolio] Refreshing Coinbase balances...');
+    try {
+      const stored = await AsyncStorage.getItem(COINBASE_CREDENTIALS_KEY);
+      if (!stored) return;
+
+      const { apiKey, apiSecret } = JSON.parse(stored);
+
+      const response = await fetch('/api/trpc/coinbase.syncBalances', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ json: { apiKey, apiSecret } }),
+      });
+
+      const data = await response.json();
+      const result = data.result?.data?.json;
+
+      if (!result?.success) return;
+
+      const coinbaseAccounts = result.accounts || [];
+
+      const updatedAssets = assets.map(asset => {
+        if (asset.isCoinbaseConnected && asset.coinbaseAccountId) {
+          const match = coinbaseAccounts.find((a: any) => a.uuid === asset.coinbaseAccountId);
+          if (match) {
+            return { ...asset, quantity: match.balance };
+          }
+        }
+        return asset;
+      });
+
+      setAssets(updatedAssets);
+      saveAssetsMutation.mutate(updatedAssets);
+      console.log('[Portfolio] Coinbase balances refreshed');
+    } catch (error) {
+      console.error('[Portfolio] Error refreshing Coinbase balances:', error);
+    }
+  };
+
   const removeAllPlaidAccounts = async () => {
     setPlaidAccounts([]);
     savePlaidAccountsMutation.mutate([]);
@@ -555,6 +649,8 @@ export const [PortfolioProvider, usePortfolio] = createContextHook(() => {
     syncPlaidAccount,
     refreshPlaidBalances,
     syncSnapTradeAccount,
+    syncCoinbaseAccount,
+    refreshCoinbaseBalances,
     removePlaidAccount,
     removeAllPlaidAccounts,
   };

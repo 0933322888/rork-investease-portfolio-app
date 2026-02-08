@@ -14,7 +14,7 @@ A cross-platform React Native investment portfolio tracking app built with Expo.
 ### Backend
 - **API Framework**: Hono (lightweight web framework)
 - **RPC**: tRPC for type-safe API calls
-- **External Services**: Plaid integration for financial account linking
+- **External Services**: Plaid, SnapTrade, and Coinbase integrations for financial account linking
 
 ### Tech Stack
 - **Runtime**: Bun
@@ -33,7 +33,7 @@ A cross-platform React Native investment portfolio tracking app built with Expo.
 ├── backend/               # Server-side code
 │   ├── hono.ts           # Hono app setup
 │   ├── trpc/             # tRPC router configuration
-│   └── lib/              # Backend utilities (Plaid client)
+│   └── lib/              # Backend utilities (Plaid, SnapTrade, Coinbase clients)
 ├── lib/                   # Shared libraries
 │   └── trpc.ts           # tRPC client setup
 ├── contexts/             # React contexts
@@ -68,7 +68,7 @@ The app uses Plaid and SnapTrade for financial account linking. Required secrets
 
 ## API Endpoints
 - `GET /api/health` - Health check
-- `/api/trpc/*` - tRPC endpoints (Plaid and SnapTrade integrations)
+- `/api/trpc/*` - tRPC endpoints (Plaid, SnapTrade, and Coinbase integrations)
 
 ## Key Features
 - Portfolio tracking for multiple asset types
@@ -104,6 +104,14 @@ The app uses Plaid and SnapTrade for financial account linking. Required secrets
   - Improved asset items with edit/delete functionality via tap menu
 - Premium gating for Connected Accounts section (Settings) and Insights page
 - Added SnapTrade integration for brokerage account connections
+- **Coinbase Integration (Feb 2026)**:
+  - Added read-only Coinbase API integration via API key/secret
+  - Backend HMAC-SHA256 request signing for Coinbase Advanced Trade API
+  - Connect Coinbase screen with step-by-step instructions
+  - Auto-import crypto balances from Coinbase accounts
+  - "Connect Coinbase" card in Add Asset > Crypto flow with divider for manual entry
+  - Deduplication logic to prevent duplicate assets on reconnect
+  - Stored credentials in AsyncStorage (consistent with existing Plaid/SnapTrade pattern)
 - Configured for Replit deployment
 - Using static export for web instead of dev server (file watcher limitations)
 - Combined backend API with static file serving on port 5000

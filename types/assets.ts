@@ -20,6 +20,8 @@ export interface Asset {
   plaidItemId?: string;
   isPlaidConnected?: boolean;
   snaptradeAccountId?: string;
+  coinbaseAccountId?: string;
+  isCoinbaseConnected?: boolean;
 }
 
 export interface AssetTypeInfo {
