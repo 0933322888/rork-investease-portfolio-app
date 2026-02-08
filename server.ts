@@ -32,6 +32,8 @@ app.use("/_expo/*", async (c, next) => {
 app.use("/_expo/*", serveStatic({ root: "./dist" }));
 app.use("/assets/*", serveStatic({ root: "./dist" }));
 
+const BUILD_ID = Date.now().toString();
+
 app.get("*", async (c) => {
   const indexPath = "./dist/index.html";
   try {
@@ -40,7 +42,10 @@ app.get("*", async (c) => {
       c.header("Cache-Control", "no-cache, no-store, must-revalidate");
       c.header("Pragma", "no-cache");
       c.header("Expires", "0");
-      return c.html(await indexFile.text());
+      let html = await indexFile.text();
+      html = html.replace(/(\.js)(")/g, `$1?v=${BUILD_ID}$2`);
+      html = html.replace(/(\.css)(")/g, `$1?v=${BUILD_ID}$2`);
+      return c.html(html);
     }
   } catch (e) {
     console.error("Error serving index.html:", e);

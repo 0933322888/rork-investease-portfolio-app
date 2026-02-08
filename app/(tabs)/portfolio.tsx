@@ -1,6 +1,5 @@
 import React, { useMemo } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { TrendingUp, Bitcoin, Gem, Receipt, Home, Wallet, ChevronRight, Pencil, Trash2, TrendingDown, DollarSign, BarChart3, Banknote, Building2, Coins, PiggyBank } from 'lucide-react-native';
 import { useRouter } from 'expo-router';
 import Svg, { Path } from 'react-native-svg';
@@ -163,13 +162,11 @@ export default function PortfolioScreen() {
     );
   };
 
-  const insets = useSafeAreaInsets();
-
   return (
     <View style={styles.container}>
       <ScrollView
         style={styles.scrollView}
-        contentContainerStyle={[styles.scrollContent, { paddingTop: insets.top + 16 }]}
+        contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
         <Text style={styles.pageTitle}>Portfolio</Text>
@@ -264,7 +261,7 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     padding: spacing.lg,
-    paddingTop: spacing.lg,
+    paddingTop: 60,
     paddingBottom: 200,
   },
   emptyState: {
