@@ -170,6 +170,7 @@ export default function PortfolioScreen() {
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
+        <Text style={styles.pageTitle}>Portfolio</Text>
         {groupsWithAssets.length === 0 ? (
           <View style={styles.emptyState}>
             <Text style={styles.emptyTitle}>No Assets Yet</Text>
@@ -254,9 +255,14 @@ const styles = StyleSheet.create({
   scrollView: {
     flex: 1,
   },
+  pageTitle: {
+    ...typography.title2,
+    color: Colors.text.primary,
+    marginBottom: spacing.lg,
+  },
   scrollContent: {
     padding: spacing.lg,
-    paddingTop: spacing.md,
+    paddingTop: spacing.lg,
     paddingBottom: 200,
   },
   emptyState: {
