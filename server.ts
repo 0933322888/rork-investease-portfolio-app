@@ -23,6 +23,12 @@ app.get("/api/health", (c) => {
   return c.json({ status: "ok", message: "Portfolio Tracker API is running" });
 });
 
+app.use("/_expo/*", async (c, next) => {
+  c.header("Cache-Control", "no-cache, no-store, must-revalidate");
+  c.header("Pragma", "no-cache");
+  c.header("Expires", "0");
+  await next();
+});
 app.use("/_expo/*", serveStatic({ root: "./dist" }));
 app.use("/assets/*", serveStatic({ root: "./dist" }));
 
