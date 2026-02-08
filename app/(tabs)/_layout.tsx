@@ -14,20 +14,18 @@ export default function TabLayout() {
         tabBarInactiveTintColor: Colors.text.tertiary,
         headerShown: false,
         tabBarStyle: {
-          backgroundColor: Colors.card,
+          backgroundColor: 'transparent',
           borderTopWidth: 0,
           paddingTop: 8,
           height: 88,
-          borderTopLeftRadius: 24,
-          borderTopRightRadius: 24,
           position: 'absolute',
           left: 0,
           right: 0,
           bottom: 0,
-          overflow: 'hidden',
+          elevation: 0,
         },
         tabBarBackground: () => (
-          <View style={{ flex: 1, backgroundColor: Colors.card, borderTopLeftRadius: 24, borderTopRightRadius: 24, overflow: 'hidden' }} />
+          <View style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: Colors.card, borderTopLeftRadius: 24, borderTopRightRadius: 24, overflow: 'hidden' }} />
         ),
         tabBarLabelStyle: {
           fontSize: 11,
