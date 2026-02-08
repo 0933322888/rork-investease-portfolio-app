@@ -164,7 +164,7 @@ export default function PortfolioScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
+    <SafeAreaView style={styles.container} edges={['top']}>
       <ScrollView
         style={styles.scrollView}
         contentContainerStyle={styles.scrollContent}
@@ -257,7 +257,7 @@ const styles = StyleSheet.create({
   scrollContent: {
     padding: spacing.lg,
     paddingTop: spacing.md,
-    paddingBottom: 160,
+    paddingBottom: 120,
   },
   emptyState: {
     flex: 1,
