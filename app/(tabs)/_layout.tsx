@@ -8,19 +8,27 @@ import Colors from "@/constants/colors";
 export default function TabLayout() {
   return (
     <Tabs
+      sceneContainerStyle={{ backgroundColor: Colors.bg }}
       screenOptions={{
         tabBarActiveTintColor: Colors.accent,
         tabBarInactiveTintColor: Colors.text.tertiary,
         headerShown: false,
         tabBarStyle: {
           backgroundColor: Colors.card,
-          borderTopWidth: 1,
-          borderTopColor: Colors.border.light,
+          borderTopWidth: 0,
           paddingTop: 8,
           height: 88,
           borderTopLeftRadius: 24,
           borderTopRightRadius: 24,
+          position: 'absolute',
+          left: 0,
+          right: 0,
+          bottom: 0,
+          overflow: 'hidden',
         },
+        tabBarBackground: () => (
+          <View style={{ flex: 1, backgroundColor: Colors.card, borderTopLeftRadius: 24, borderTopRightRadius: 24, overflow: 'hidden' }} />
+        ),
         tabBarLabelStyle: {
           fontSize: 11,
           fontWeight: '600',
