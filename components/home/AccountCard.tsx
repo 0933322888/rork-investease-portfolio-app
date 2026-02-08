@@ -81,7 +81,7 @@ export function AddAccountCard({ delay = 0, onPress }: { delay?: number; onPress
 const styles = StyleSheet.create({
   card: {
     width: 180,
-    height: 110,
+    height: 140,
     borderRadius: 20,
     padding: spacing.md,
     backgroundColor: Colors.cardSoft,
@@ -134,7 +134,7 @@ const styles = StyleSheet.create({
   },
   addCard: {
     width: 180,
-    height: 110,
+    height: 140,
     borderRadius: 20,
     borderWidth: 1,
     borderColor: Colors.accent,
