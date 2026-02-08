@@ -28,13 +28,6 @@ const ALLOC_COLORS: Record<string, string> = {
   'fixed-income': '#B8C1EC',
 };
 
-function getGreeting(): string {
-  const hour = new Date().getHours();
-  if (hour < 12) return 'Good morning';
-  if (hour < 17) return 'Good afternoon';
-  return 'Good evening';
-}
-
 function getFormattedDate(): string {
   return new Date().toLocaleDateString('en-US', {
     weekday: 'long',
@@ -241,16 +234,6 @@ export default function HomeScreen() {
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.scrollContent}
       >
-        <AnimatedCard delay={0} style={styles.header}>
-          <View>
-            <Text style={styles.greetingLabel}>{getGreeting()}</Text>
-            <Text style={styles.greetingName}>User</Text>
-          </View>
-          <TouchableOpacity style={styles.avatar} activeOpacity={0.7} onPress={() => router.push('/(tabs)/settings')}>
-            <Text style={styles.avatarText}>U</Text>
-          </TouchableOpacity>
-        </AnimatedCard>
-
         <AnimatedCard delay={80}>
           <TouchableOpacity
             style={styles.heroCard}
@@ -368,38 +351,6 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     paddingBottom: 160,
-  },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: spacing.lg,
-    paddingTop: spacing.md,
-    paddingBottom: spacing.lg,
-  },
-  greetingLabel: {
-    fontSize: 16,
-    fontWeight: '500',
-    color: Colors.text.secondary,
-  },
-  greetingName: {
-    fontSize: 22,
-    fontWeight: '600',
-    color: Colors.text.primary,
-    marginTop: 2,
-  },
-  avatar: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: Colors.cardSoft,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  avatarText: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: Colors.text.primary,
   },
   heroCard: {
     backgroundColor: Colors.card,
