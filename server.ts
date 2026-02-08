@@ -31,6 +31,9 @@ app.get("*", async (c) => {
   try {
     const indexFile = file(indexPath);
     if (await indexFile.exists()) {
+      c.header("Cache-Control", "no-cache, no-store, must-revalidate");
+      c.header("Pragma", "no-cache");
+      c.header("Expires", "0");
       return c.html(await indexFile.text());
     }
   } catch (e) {
