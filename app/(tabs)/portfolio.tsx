@@ -1,6 +1,6 @@
-import React, { useMemo } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert } from 'react-native';
-import { TrendingUp, Bitcoin, Gem, Receipt, Home, Wallet, ChevronRight, Pencil, Trash2, TrendingDown, DollarSign, BarChart3, Banknote, Building2, Coins, PiggyBank } from 'lucide-react-native';
+import React, { useMemo, useCallback } from 'react';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert, ActivityIndicator } from 'react-native';
+import { TrendingUp, Bitcoin, Gem, Receipt, Home, Wallet, ChevronRight, Pencil, Trash2, TrendingDown, DollarSign, BarChart3, Banknote, Building2, Coins, PiggyBank, RefreshCw } from 'lucide-react-native';
 import { useRouter } from 'expo-router';
 import Svg, { Path } from 'react-native-svg';
 import Colors from '@/constants/colors';
@@ -136,12 +136,28 @@ function AssetItem({ asset, onEdit, onDelete }: AssetItemProps) {
   );
 }
 
+function formatTimeAgo(timestamp: number | null): string {
+  if (!timestamp) return '';
+  const seconds = Math.floor((Date.now() - timestamp) / 1000);
+  if (seconds < 60) return 'just now';
+  const minutes = Math.floor(seconds / 60);
+  if (minutes < 60) return `${minutes}m ago`;
+  const hours = Math.floor(minutes / 60);
+  return `${hours}h ago`;
+}
+
 export default function PortfolioScreen() {
   const router = useRouter();
-  const { assetsByType, deleteAsset, totalValue, totalGain, totalGainPercent, assets } = usePortfolio();
+  const { assetsByType, deleteAsset, totalValue, totalGain, totalGainPercent, assets, refreshMarketPrices, isRefreshingPrices, lastPriceRefresh } = usePortfolio();
 
   const groupsWithAssets = ASSET_TYPES.filter((type) => assetsByType[type.id].length > 0);
   const isPositive = totalGain >= 0;
+
+  const handleRefresh = useCallback(() => {
+    if (!isRefreshingPrices) {
+      refreshMarketPrices();
+    }
+  }, [isRefreshingPrices, refreshMarketPrices]);
 
   const handleEditAsset = (asset: Asset) => {
     router.push({ pathname: '/edit-asset', params: { id: asset.id } });
@@ -169,7 +185,26 @@ export default function PortfolioScreen() {
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
-        <Text style={styles.pageTitle}>Portfolio</Text>
+        <View style={styles.headerRow}>
+          <Text style={styles.pageTitle}>Portfolio</Text>
+          <TouchableOpacity
+            style={styles.refreshButton}
+            onPress={handleRefresh}
+            disabled={isRefreshingPrices}
+            activeOpacity={0.6}
+          >
+            {isRefreshingPrices ? (
+              <ActivityIndicator size="small" color={Colors.accent} />
+            ) : (
+              <RefreshCw size={18} color={Colors.text.secondary} strokeWidth={2} />
+            )}
+          </TouchableOpacity>
+        </View>
+        {lastPriceRefresh && (
+          <Text style={styles.lastUpdated}>
+            Prices updated {formatTimeAgo(lastPriceRefresh)}
+          </Text>
+        )}
         {groupsWithAssets.length === 0 ? (
           <View style={styles.emptyState}>
             <Text style={styles.emptyTitle}>No Assets Yet</Text>
@@ -254,9 +289,27 @@ const styles = StyleSheet.create({
   scrollView: {
     flex: 1,
   },
+  headerRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: spacing.xs,
+  },
   pageTitle: {
     ...typography.title2,
     color: Colors.text.primary,
+  },
+  refreshButton: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: Colors.card,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  lastUpdated: {
+    ...typography.caption,
+    color: Colors.text.secondary,
     marginBottom: spacing.lg,
   },
   scrollContent: {

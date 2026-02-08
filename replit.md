@@ -115,6 +115,13 @@ The app uses Plaid and SnapTrade for financial account linking. Required secrets
   - Portfolio Health score with progress gauge bar
   - Connected Accounts horizontal scroll with per-type cards and "Add account" button
   - Insights section with icon-prefixed actionable items
+- **Live Market Prices on Portfolio (Feb 2026)**:
+  - Auto-fetches real-time prices for stocks and crypto via FMP API on page load
+  - Updates currentPrice on assets with symbols, recalculates portfolio totals
+  - Refresh button (RefreshCw icon) in portfolio header for manual price refresh
+  - "Prices updated X ago" timestamp indicator
+  - Prices persisted to AsyncStorage after update
+  - Uses ref guard for single initial auto-refresh, proper error handling
 - **UI Design Improvements (Feb 2026)**:
   - Added portfolio summary card at top of Portfolio page showing total value, gain/loss with percentage pill, and asset count
   - Added asset type icons (stocks, crypto, real estate, etc.) for visual recognition

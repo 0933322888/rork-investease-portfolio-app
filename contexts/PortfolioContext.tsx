@@ -1,7 +1,7 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import createContextHook from '@nkzw/create-context-hook';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { Asset, AssetType } from '@/types/assets';
 import { PlaidAccount } from '@/types/plaid';
 import { trpc } from '@/lib/trpc';
@@ -11,10 +11,14 @@ const ONBOARDING_KEY = 'has_completed_onboarding';
 const PLAID_ACCOUNTS_KEY = 'plaid_accounts';
 const COINBASE_CREDENTIALS_KEY = 'coinbase_credentials';
 
+const MARKET_PRICE_TYPES: AssetType[] = ['stocks', 'crypto'];
+
 export const [PortfolioProvider, usePortfolio] = createContextHook(() => {
   const queryClient = useQueryClient();
   const [assets, setAssets] = useState<Asset[]>([]);
   const [plaidAccounts, setPlaidAccounts] = useState<PlaidAccount[]>([]);
+  const [isRefreshingPrices, setIsRefreshingPrices] = useState(false);
+  const [lastPriceRefresh, setLastPriceRefresh] = useState<number | null>(null);
 
   const assetsQuery = useQuery({
     queryKey: ['assets'],
@@ -622,6 +626,82 @@ export const [PortfolioProvider, usePortfolio] = createContextHook(() => {
     }
   };
 
+  const hasRefreshedRef = useRef(false);
+
+  const refreshMarketPrices = useCallback(async () => {
+    const symbolAssets = assets.filter(
+      (a) => a.symbol && MARKET_PRICE_TYPES.includes(a.type)
+    );
+    if (symbolAssets.length === 0) {
+      console.log('[Portfolio] No tradeable assets with symbols to refresh');
+      return;
+    }
+
+    setIsRefreshingPrices(true);
+    try {
+      const marketRequests = symbolAssets.map((a) => ({
+        symbol: a.symbol!,
+        assetType: a.type,
+      }));
+
+      const response = await fetch(
+        `/api/trpc/marketData.getMarketData?input=${encodeURIComponent(
+          JSON.stringify({ json: { assets: marketRequests } })
+        )}`
+      );
+
+      if (!response.ok) {
+        console.warn('[Portfolio] Market price fetch failed:', response.status, response.statusText);
+        return;
+      }
+
+      const data = await response.json();
+      const result = data.result?.data?.json;
+
+      if (!result?.success || !result.data) {
+        console.warn('[Portfolio] Market price refresh failed:', result?.error);
+        return;
+      }
+
+      const priceMap = new Map<string, number>();
+      for (const item of result.data) {
+        priceMap.set(item.originalSymbol.toUpperCase(), item.price);
+        priceMap.set(item.symbol.toUpperCase(), item.price);
+      }
+
+      let hasChanges = false;
+      const updatedAssets = assets.map((asset) => {
+        if (!asset.symbol || !MARKET_PRICE_TYPES.includes(asset.type)) return asset;
+        const livePrice = priceMap.get(asset.symbol.toUpperCase());
+        if (livePrice !== undefined && livePrice > 0 && livePrice !== asset.currentPrice) {
+          hasChanges = true;
+          return { ...asset, currentPrice: livePrice };
+        }
+        return asset;
+      });
+
+      if (hasChanges) {
+        setAssets(updatedAssets);
+        saveAssetsMutation.mutate(updatedAssets);
+        console.log('[Portfolio] Market prices updated for', result.data.length, 'symbols');
+      } else {
+        console.log('[Portfolio] Market prices unchanged');
+      }
+      setLastPriceRefresh(Date.now());
+    } catch (error) {
+      console.error('[Portfolio] Error refreshing market prices:', error);
+    } finally {
+      setIsRefreshingPrices(false);
+    }
+  }, [assets, saveAssetsMutation]);
+
+  useEffect(() => {
+    if (assets.length > 0 && !hasRefreshedRef.current) {
+      hasRefreshedRef.current = true;
+      refreshMarketPrices();
+    }
+  }, [assets, refreshMarketPrices]);
+
   const removeAllPlaidAccounts = async () => {
     setPlaidAccounts([]);
     savePlaidAccountsMutation.mutate([]);
@@ -653,5 +733,8 @@ export const [PortfolioProvider, usePortfolio] = createContextHook(() => {
     refreshCoinbaseBalances,
     removePlaidAccount,
     removeAllPlaidAccounts,
+    refreshMarketPrices,
+    isRefreshingPrices,
+    lastPriceRefresh,
   };
 });
