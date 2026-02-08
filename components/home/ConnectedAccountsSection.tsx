@@ -60,7 +60,7 @@ export default function ConnectedAccountsSection() {
   };
 
   const handleSeeAll = () => {
-    // stub: navigate to AccountsList
+    router.push('/(tabs)/settings');
   };
 
   return (
