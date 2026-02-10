@@ -1,11 +1,28 @@
-import { Tabs } from "expo-router";
-import { Home, Layers, Plus, Sparkles, Settings } from "lucide-react-native";
+import { Tabs, usePathname } from "expo-router";
+import { Home, Layers, Plus, Sparkles, Settings, RefreshCw } from "lucide-react-native";
 import React from "react";
 import { View, StyleSheet } from "react-native";
 
 import Colors from "@/constants/colors";
+import { usePortfolio } from "@/contexts/PortfolioContext";
+
+function CenterButton({ isPortfolio }: { isPortfolio: boolean }) {
+  return (
+    <View style={styles.addButton}>
+      {isPortfolio ? (
+        <RefreshCw size={24} color="#FFFFFF" strokeWidth={2.5} />
+      ) : (
+        <Plus size={24} color="#FFFFFF" strokeWidth={2.5} />
+      )}
+    </View>
+  );
+}
 
 export default function TabLayout() {
+  const pathname = usePathname();
+  const isPortfolio = pathname === '/portfolio';
+  const { refreshMarketPrices, isRefreshingPrices } = usePortfolio();
+
   return (
     <Tabs
       sceneContainerStyle={{ backgroundColor: Colors.bg }}
@@ -52,17 +69,19 @@ export default function TabLayout() {
         name="add"
         options={{
           title: "",
-          tabBarIcon: () => (
-            <View style={styles.addButton}>
-              <Plus size={24} color="#FFFFFF" strokeWidth={2.5} />
-            </View>
-          ),
+          tabBarIcon: () => <CenterButton isPortfolio={isPortfolio} />,
           tabBarLabel: () => null,
         }}
         listeners={({ navigation }) => ({
           tabPress: (e) => {
             e.preventDefault();
-            navigation.navigate('add-asset');
+            if (isPortfolio) {
+              if (!isRefreshingPrices) {
+                refreshMarketPrices();
+              }
+            } else {
+              navigation.navigate('add-asset');
+            }
           },
         })}
       />
