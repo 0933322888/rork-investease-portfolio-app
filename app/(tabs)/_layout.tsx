@@ -1,19 +1,54 @@
 import { Tabs, usePathname } from "expo-router";
 import { Home, Layers, Plus, Sparkles, Settings, RefreshCw } from "lucide-react-native";
-import React from "react";
+import React, { useEffect, useRef } from "react";
 import { View, StyleSheet } from "react-native";
+import Animated, {
+  useSharedValue,
+  useAnimatedStyle,
+  withTiming,
+  withSequence,
+  withSpring,
+  Easing,
+} from "react-native-reanimated";
 
 import Colors from "@/constants/colors";
 import { usePortfolio } from "@/contexts/PortfolioContext";
 
 function CenterButton({ isPortfolio }: { isPortfolio: boolean }) {
+  const scale = useSharedValue(1);
+  const rotate = useSharedValue(0);
+  const prevIsPortfolio = useRef(isPortfolio);
+
+  useEffect(() => {
+    if (prevIsPortfolio.current !== isPortfolio) {
+      prevIsPortfolio.current = isPortfolio;
+      scale.value = withSequence(
+        withTiming(0.6, { duration: 120, easing: Easing.out(Easing.quad) }),
+        withSpring(1, { damping: 10, stiffness: 200 })
+      );
+      rotate.value = withTiming(isPortfolio ? 180 : 0, {
+        duration: 300,
+        easing: Easing.out(Easing.cubic),
+      });
+    }
+  }, [isPortfolio]);
+
+  const animatedIconStyle = useAnimatedStyle(() => ({
+    transform: [
+      { scale: scale.value },
+      { rotate: `${rotate.value}deg` },
+    ],
+  }));
+
   return (
     <View style={styles.addButton}>
-      {isPortfolio ? (
-        <RefreshCw size={24} color="#FFFFFF" strokeWidth={2.5} />
-      ) : (
-        <Plus size={24} color="#FFFFFF" strokeWidth={2.5} />
-      )}
+      <Animated.View style={animatedIconStyle}>
+        {isPortfolio ? (
+          <RefreshCw size={24} color="#FFFFFF" strokeWidth={2.5} />
+        ) : (
+          <Plus size={24} color="#FFFFFF" strokeWidth={2.5} />
+        )}
+      </Animated.View>
     </View>
   );
 }
