@@ -11,6 +11,7 @@ import Animated, {
   Easing,
 } from 'react-native-reanimated';
 import Colors from '@/constants/colors';
+import GradientBackground from '@/components/GradientBackground';
 import { spacing, borderRadius } from '@/constants/spacing';
 import { typography } from '@/constants/typography';
 import { useInsightsRefresh } from './_layout';
@@ -94,6 +95,7 @@ export default function InsightsScreen() {
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
+      <GradientBackground />
       <ScrollView
         ref={scrollRef}
         style={styles.scrollView}

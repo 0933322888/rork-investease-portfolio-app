@@ -94,7 +94,7 @@ export default function TabLayout() {
       value={{ refreshKey: insightsRefreshKey, triggerRefresh: triggerInsightsRefresh }}
     >
       <Tabs
-        sceneContainerStyle={{ backgroundColor: Colors.bg }}
+        sceneContainerStyle={{ backgroundColor: 'transparent' }}
         screenOptions={{
           tabBarActiveTintColor: Colors.accent,
           tabBarInactiveTintColor: Colors.text.tertiary,

@@ -9,6 +9,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import Svg, { Path, Defs, LinearGradient as SvgLinearGradient, Stop, Circle as SvgCircle, Rect, Line } from 'react-native-svg';
 import Animated, { useSharedValue, useAnimatedStyle, withTiming, withDelay, Easing } from 'react-native-reanimated';
 import Colors from '@/constants/colors';
+import GradientBackground from '@/components/GradientBackground';
 import { spacing, borderRadius } from '@/constants/spacing';
 import { typography } from '@/constants/typography';
 import { usePortfolio } from '@/contexts/PortfolioContext';
@@ -229,6 +230,7 @@ export default function HomeScreen() {
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
+      <GradientBackground />
       <ScrollView
         style={styles.scrollView}
         showsVerticalScrollIndicator={false}
@@ -345,7 +347,7 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: Colors.bg,
-  },
+  } as const,
   scrollView: {
     flex: 1,
   },

@@ -4,6 +4,7 @@ import { TrendingUp, Bitcoin, Gem, Receipt, Home, Wallet, ChevronRight, Pencil, 
 import { useRouter } from 'expo-router';
 import Svg, { Path } from 'react-native-svg';
 import Colors from '@/constants/colors';
+import GradientBackground from '@/components/GradientBackground';
 import { spacing, borderRadius } from '@/constants/spacing';
 import { typography } from '@/constants/typography';
 import { usePortfolio } from '@/contexts/PortfolioContext';
@@ -174,6 +175,7 @@ export default function PortfolioScreen() {
 
   return (
     <View style={styles.container}>
+      <GradientBackground />
       <ScrollView
         style={styles.scrollView}
         contentContainerStyle={styles.scrollContent}
