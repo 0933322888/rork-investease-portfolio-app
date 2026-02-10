@@ -1,6 +1,6 @@
 import { Tabs, usePathname } from "expo-router";
-import { Home, Layers, Plus, Sparkles, Settings, RefreshCw } from "lucide-react-native";
-import React, { useEffect, useRef } from "react";
+import { Home, Layers, Plus, Sparkles, Settings, RefreshCw, Wand2 } from "lucide-react-native";
+import React, { useEffect, useRef, createContext, useContext, useState, useCallback } from "react";
 import { View, StyleSheet } from "react-native";
 import Animated, {
   useSharedValue,
@@ -14,24 +14,48 @@ import Animated, {
 import Colors from "@/constants/colors";
 import { usePortfolio } from "@/contexts/PortfolioContext";
 
-function CenterButton({ isPortfolio }: { isPortfolio: boolean }) {
+type ActiveTab = "home" | "portfolio" | "insights" | "settings" | string;
+
+const InsightsRefreshContext = createContext<{
+  refreshKey: number;
+  triggerRefresh: () => void;
+}>({ refreshKey: 0, triggerRefresh: () => {} });
+
+export function useInsightsRefresh() {
+  return useContext(InsightsRefreshContext);
+}
+
+function getIconForTab(tab: ActiveTab) {
+  switch (tab) {
+    case "portfolio":
+      return <RefreshCw size={24} color="#FFFFFF" strokeWidth={2.5} />;
+    case "insights":
+      return <Wand2 size={24} color="#FFFFFF" strokeWidth={2.5} />;
+    default:
+      return <Plus size={24} color="#FFFFFF" strokeWidth={2.5} />;
+  }
+}
+
+function CenterButton({ activeTab }: { activeTab: ActiveTab }) {
   const scale = useSharedValue(1);
   const rotate = useSharedValue(0);
-  const prevIsPortfolio = useRef(isPortfolio);
+  const prevTab = useRef(activeTab);
 
   useEffect(() => {
-    if (prevIsPortfolio.current !== isPortfolio) {
-      prevIsPortfolio.current = isPortfolio;
+    if (prevTab.current !== activeTab) {
+      prevTab.current = activeTab;
       scale.value = withSequence(
         withTiming(0.6, { duration: 120, easing: Easing.out(Easing.quad) }),
         withSpring(1, { damping: 10, stiffness: 200 })
       );
-      rotate.value = withTiming(isPortfolio ? 180 : 0, {
-        duration: 300,
-        easing: Easing.out(Easing.cubic),
-      });
+      rotate.value = withSequence(
+        withTiming(rotate.value + 180, {
+          duration: 300,
+          easing: Easing.out(Easing.cubic),
+        })
+      );
     }
-  }, [isPortfolio]);
+  }, [activeTab]);
 
   const animatedIconStyle = useAnimatedStyle(() => ({
     transform: [
@@ -43,11 +67,7 @@ function CenterButton({ isPortfolio }: { isPortfolio: boolean }) {
   return (
     <View style={styles.addButton}>
       <Animated.View style={animatedIconStyle}>
-        {isPortfolio ? (
-          <RefreshCw size={24} color="#FFFFFF" strokeWidth={2.5} />
-        ) : (
-          <Plus size={24} color="#FFFFFF" strokeWidth={2.5} />
-        )}
+        {getIconForTab(activeTab)}
       </Animated.View>
     </View>
   );
@@ -55,86 +75,101 @@ function CenterButton({ isPortfolio }: { isPortfolio: boolean }) {
 
 export default function TabLayout() {
   const pathname = usePathname();
-  const isPortfolio = pathname === '/portfolio';
   const { refreshMarketPrices, isRefreshingPrices } = usePortfolio();
+  const [insightsRefreshKey, setInsightsRefreshKey] = useState(0);
+
+  const triggerInsightsRefresh = useCallback(() => {
+    setInsightsRefreshKey((k) => k + 1);
+  }, []);
+
+  let activeTab: ActiveTab = "home";
+  if (pathname === "/portfolio") activeTab = "portfolio";
+  else if (pathname === "/insights") activeTab = "insights";
+  else if (pathname === "/settings") activeTab = "settings";
 
   return (
-    <Tabs
-      sceneContainerStyle={{ backgroundColor: Colors.bg }}
-      screenOptions={{
-        tabBarActiveTintColor: Colors.accent,
-        tabBarInactiveTintColor: Colors.text.tertiary,
-        headerShown: false,
-        tabBarStyle: {
-          backgroundColor: 'transparent',
-          borderTopWidth: 0,
-          paddingTop: 8,
-          height: 88,
-          position: 'absolute',
-          left: 0,
-          right: 0,
-          bottom: 0,
-          elevation: 0,
-        },
-        tabBarBackground: () => (
-          <View style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: Colors.card, borderTopLeftRadius: 24, borderTopRightRadius: 24, overflow: 'hidden' }} />
-        ),
-        tabBarLabelStyle: {
-          fontSize: 11,
-          fontWeight: '600',
-          marginBottom: 8,
-        },
-      }}
+    <InsightsRefreshContext.Provider
+      value={{ refreshKey: insightsRefreshKey, triggerRefresh: triggerInsightsRefresh }}
     >
-      <Tabs.Screen
-        name="home"
-        options={{
-          title: "Home",
-          tabBarIcon: ({ color }) => <Home size={22} color={color} strokeWidth={2} />,
-        }}
-      />
-      <Tabs.Screen
-        name="portfolio"
-        options={{
-          title: "Portfolio",
-          tabBarIcon: ({ color }) => <Layers size={22} color={color} strokeWidth={2} />,
-        }}
-      />
-      <Tabs.Screen
-        name="add"
-        options={{
-          title: "",
-          tabBarIcon: () => <CenterButton isPortfolio={isPortfolio} />,
-          tabBarLabel: () => null,
-        }}
-        listeners={({ navigation }) => ({
-          tabPress: (e) => {
-            e.preventDefault();
-            if (isPortfolio) {
-              if (!isRefreshingPrices) {
-                refreshMarketPrices();
-              }
-            } else {
-              navigation.navigate('add-asset');
-            }
+      <Tabs
+        sceneContainerStyle={{ backgroundColor: Colors.bg }}
+        screenOptions={{
+          tabBarActiveTintColor: Colors.accent,
+          tabBarInactiveTintColor: Colors.text.tertiary,
+          headerShown: false,
+          tabBarStyle: {
+            backgroundColor: 'transparent',
+            borderTopWidth: 0,
+            paddingTop: 8,
+            height: 88,
+            position: 'absolute',
+            left: 0,
+            right: 0,
+            bottom: 0,
+            elevation: 0,
           },
-        })}
-      />
-      <Tabs.Screen
-        name="insights"
-        options={{
-          title: "Insights",
-          tabBarIcon: ({ color }) => <Sparkles size={22} color={color} strokeWidth={2} />,
+          tabBarBackground: () => (
+            <View style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: Colors.card, borderTopLeftRadius: 24, borderTopRightRadius: 24, overflow: 'hidden' }} />
+          ),
+          tabBarLabelStyle: {
+            fontSize: 11,
+            fontWeight: '600',
+            marginBottom: 8,
+          },
         }}
-      />
-      <Tabs.Screen
-        name="settings"
-        options={{
-          title: "Settings",
-          tabBarIcon: ({ color }) => <Settings size={22} color={color} strokeWidth={2} />,
-        }}
-      />
-    </Tabs>
+      >
+        <Tabs.Screen
+          name="home"
+          options={{
+            title: "Home",
+            tabBarIcon: ({ color }) => <Home size={22} color={color} strokeWidth={2} />,
+          }}
+        />
+        <Tabs.Screen
+          name="portfolio"
+          options={{
+            title: "Portfolio",
+            tabBarIcon: ({ color }) => <Layers size={22} color={color} strokeWidth={2} />,
+          }}
+        />
+        <Tabs.Screen
+          name="add"
+          options={{
+            title: "",
+            tabBarIcon: () => <CenterButton activeTab={activeTab} />,
+            tabBarLabel: () => null,
+          }}
+          listeners={({ navigation }) => ({
+            tabPress: (e) => {
+              e.preventDefault();
+              if (activeTab === "portfolio") {
+                if (!isRefreshingPrices) {
+                  refreshMarketPrices();
+                }
+              } else if (activeTab === "insights") {
+                triggerInsightsRefresh();
+              } else {
+                navigation.navigate('add-asset');
+              }
+            },
+          })}
+        />
+        <Tabs.Screen
+          name="insights"
+          options={{
+            title: "Insights",
+            tabBarIcon: ({ color }) => <Sparkles size={22} color={color} strokeWidth={2} />,
+          }}
+        />
+        <Tabs.Screen
+          name="settings"
+          options={{
+            title: "Settings",
+            tabBarIcon: ({ color }) => <Settings size={22} color={color} strokeWidth={2} />,
+          }}
+        />
+      </Tabs>
+    </InsightsRefreshContext.Provider>
   );
 }
 

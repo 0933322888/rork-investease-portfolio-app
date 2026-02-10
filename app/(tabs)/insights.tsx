@@ -1,20 +1,62 @@
-import React from 'react';
+import React, { useEffect, useRef } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Lock, TrendingUp, Globe, PieChart, Sparkles } from 'lucide-react-native';
+import { Lock, TrendingUp, Globe, PieChart, Sparkles, Wand2 } from 'lucide-react-native';
+import Animated, {
+  useSharedValue,
+  useAnimatedStyle,
+  withTiming,
+  withSequence,
+  withDelay,
+  Easing,
+} from 'react-native-reanimated';
 import Colors from '@/constants/colors';
 import { spacing, borderRadius } from '@/constants/spacing';
 import { typography } from '@/constants/typography';
+import { useInsightsRefresh } from './_layout';
 
 interface InsightPreviewProps {
   icon: React.ReactNode;
   title: string;
   description: string;
+  index: number;
+  refreshKey: number;
 }
 
-function InsightPreview({ icon, title, description }: InsightPreviewProps) {
+function InsightPreview({ icon, title, description, index, refreshKey }: InsightPreviewProps) {
+  const opacity = useSharedValue(1);
+  const translateY = useSharedValue(0);
+  const isFirst = useRef(true);
+
+  useEffect(() => {
+    if (isFirst.current) {
+      isFirst.current = false;
+      return;
+    }
+    const delay = index * 100;
+    opacity.value = withDelay(
+      delay,
+      withSequence(
+        withTiming(0.3, { duration: 150 }),
+        withTiming(1, { duration: 400, easing: Easing.out(Easing.quad) })
+      )
+    );
+    translateY.value = withDelay(
+      delay,
+      withSequence(
+        withTiming(8, { duration: 150 }),
+        withTiming(0, { duration: 400, easing: Easing.out(Easing.quad) })
+      )
+    );
+  }, [refreshKey]);
+
+  const animatedStyle = useAnimatedStyle(() => ({
+    opacity: opacity.value,
+    transform: [{ translateY: translateY.value }],
+  }));
+
   return (
-    <View style={styles.insightCard}>
+    <Animated.View style={[styles.insightCard, animatedStyle]}>
       <View style={styles.insightIconContainer}>{icon}</View>
       <View style={styles.insightContent}>
         <Text style={styles.insightTitle}>{title}</Text>
@@ -23,19 +65,42 @@ function InsightPreview({ icon, title, description }: InsightPreviewProps) {
       <View style={styles.lockBadge}>
         <Lock size={14} color={Colors.text.tertiary} strokeWidth={2} />
       </View>
-    </View>
+    </Animated.View>
   );
 }
 
 export default function InsightsScreen() {
+  const { refreshKey } = useInsightsRefresh();
+  const scrollRef = useRef<ScrollView>(null);
+  const headerGlow = useSharedValue(0);
+  const isFirst = useRef(true);
+
+  useEffect(() => {
+    if (isFirst.current) {
+      isFirst.current = false;
+      return;
+    }
+    scrollRef.current?.scrollTo({ y: 0, animated: true });
+    headerGlow.value = withSequence(
+      withTiming(1, { duration: 300 }),
+      withTiming(0, { duration: 800, easing: Easing.out(Easing.quad) })
+    );
+  }, [refreshKey]);
+
+  const headerGlowStyle = useAnimatedStyle(() => ({
+    shadowOpacity: headerGlow.value * 0.6,
+    shadowRadius: headerGlow.value * 20,
+  }));
+
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
       <ScrollView
+        ref={scrollRef}
         style={styles.scrollView}
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
-        <View style={styles.header}>
+        <Animated.View style={[styles.header, headerGlowStyle]}>
           <View style={styles.headerBadge}>
             <Sparkles size={16} color={Colors.accent} strokeWidth={2} />
             <Text style={styles.headerBadgeText}>Premium</Text>
@@ -44,23 +109,29 @@ export default function InsightsScreen() {
           <Text style={styles.headerDescription}>
             Understand your portfolio better with advanced analytics and personalized recommendations
           </Text>
-        </View>
+        </Animated.View>
 
         <View style={styles.insights}>
           <InsightPreview
             icon={<Globe size={24} color={Colors.accent} strokeWidth={2} />}
             title="Geographic Exposure"
             description="See where your investments are distributed across countries and regions"
+            index={0}
+            refreshKey={refreshKey}
           />
           <InsightPreview
             icon={<PieChart size={24} color={Colors.accent} strokeWidth={2} />}
             title="Sector Analysis"
             description="Understand your concentration across technology, healthcare, finance, and more"
+            index={1}
+            refreshKey={refreshKey}
           />
           <InsightPreview
             icon={<TrendingUp size={24} color={Colors.accent} strokeWidth={2} />}
             title="Risk Assessment"
             description="Get personalized insights into your portfolio's risk profile and volatility"
+            index={2}
+            refreshKey={refreshKey}
           />
         </View>
 
@@ -119,6 +190,10 @@ const styles = StyleSheet.create({
   },
   header: {
     marginBottom: spacing.xl,
+    shadowColor: Colors.accent,
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0,
+    shadowRadius: 0,
   },
   headerBadge: {
     flexDirection: 'row',
