@@ -1,6 +1,6 @@
-import React, { useMemo, useCallback } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert, ActivityIndicator } from 'react-native';
-import { TrendingUp, Bitcoin, Gem, Receipt, Home, Wallet, ChevronRight, Pencil, Trash2, TrendingDown, DollarSign, BarChart3, Banknote, Building2, Coins, PiggyBank, RefreshCw } from 'lucide-react-native';
+import React, { useMemo } from 'react';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert } from 'react-native';
+import { TrendingUp, Bitcoin, Gem, Receipt, Home, Wallet, ChevronRight, Pencil, Trash2, TrendingDown, DollarSign, BarChart3, Banknote, Building2, Coins, PiggyBank } from 'lucide-react-native';
 import { useRouter } from 'expo-router';
 import Svg, { Path } from 'react-native-svg';
 import Colors from '@/constants/colors';
@@ -148,16 +148,10 @@ function formatTimeAgo(timestamp: number | null): string {
 
 export default function PortfolioScreen() {
   const router = useRouter();
-  const { assetsByType, deleteAsset, totalValue, totalGain, totalGainPercent, assets, refreshMarketPrices, isRefreshingPrices, lastPriceRefresh } = usePortfolio();
+  const { assetsByType, deleteAsset, totalValue, totalGain, totalGainPercent, assets, lastPriceRefresh } = usePortfolio();
 
   const groupsWithAssets = ASSET_TYPES.filter((type) => assetsByType[type.id].length > 0);
   const isPositive = totalGain >= 0;
-
-  const handleRefresh = useCallback(() => {
-    if (!isRefreshingPrices) {
-      refreshMarketPrices();
-    }
-  }, [isRefreshingPrices, refreshMarketPrices]);
 
   const handleEditAsset = (asset: Asset) => {
     router.push({ pathname: '/edit-asset', params: { id: asset.id } });
@@ -185,21 +179,7 @@ export default function PortfolioScreen() {
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
-        <View style={styles.headerRow}>
-          <Text style={styles.pageTitle}>Portfolio</Text>
-          <TouchableOpacity
-            style={styles.refreshButton}
-            onPress={handleRefresh}
-            disabled={isRefreshingPrices}
-            activeOpacity={0.6}
-          >
-            {isRefreshingPrices ? (
-              <ActivityIndicator size="small" color={Colors.accent} />
-            ) : (
-              <RefreshCw size={18} color={Colors.text.secondary} strokeWidth={2} />
-            )}
-          </TouchableOpacity>
-        </View>
+        <Text style={styles.pageTitle}>Portfolio</Text>
         {lastPriceRefresh && (
           <Text style={styles.lastUpdated}>
             Prices updated {formatTimeAgo(lastPriceRefresh)}
@@ -289,23 +269,10 @@ const styles = StyleSheet.create({
   scrollView: {
     flex: 1,
   },
-  headerRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: spacing.xs,
-  },
   pageTitle: {
     ...typography.title2,
     color: Colors.text.primary,
-  },
-  refreshButton: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    backgroundColor: Colors.card,
-    alignItems: 'center',
-    justifyContent: 'center',
+    marginBottom: spacing.xs,
   },
   lastUpdated: {
     ...typography.caption,
