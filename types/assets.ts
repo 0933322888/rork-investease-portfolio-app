@@ -1,4 +1,4 @@
-export type AssetType = 'stocks' | 'crypto' | 'commodities' | 'fixed-income' | 'real-estate' | 'cash';
+export type AssetType = 'stocks' | 'crypto' | 'commodities' | 'fixed-income' | 'real-estate' | 'cash' | 'other';
 
 export interface Asset {
   id: string;
@@ -67,5 +67,11 @@ export const ASSET_TYPES: AssetTypeInfo[] = [
     label: 'Cash',
     icon: 'Wallet',
     description: 'Cash and cash equivalents',
+  },
+  {
+    id: 'other',
+    label: 'Other',
+    icon: 'Package',
+    description: 'Collectibles, art, and other assets',
   },
 ];

@@ -27,6 +27,7 @@ const ALLOC_COLORS: Record<string, string> = {
   'real-estate': Colors.realEstate,
   commodities: Colors.other,
   'fixed-income': '#B8C1EC',
+  other: '#B8C1EC',
 };
 
 function getFormattedDate(): string {

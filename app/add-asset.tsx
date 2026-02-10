@@ -1,5 +1,5 @@
 import { router } from 'expo-router';
-import { X, TrendingUp, Bitcoin, Gem, Receipt, Home, Wallet, Check, Link2 } from 'lucide-react-native';
+import { X, TrendingUp, Bitcoin, Gem, Receipt, Home, Wallet, Package, Check, Link2 } from 'lucide-react-native';
 import React, { useState } from 'react';
 import {
   View,
@@ -25,6 +25,7 @@ const ICONS = {
   Receipt,
   Home,
   Wallet,
+  Package,
 };
 
 export default function AddAssetScreen() {
@@ -39,6 +40,7 @@ export default function AddAssetScreen() {
   const [monthlyIncome, setMonthlyIncome] = useState('');
   const [dueDate, setDueDate] = useState('');
   const [estimatedValue, setEstimatedValue] = useState('');
+  const [marketValue, setMarketValue] = useState('');
 
   const handleSelectType = (type: AssetType) => {
     setSelectedType(type);
@@ -109,6 +111,12 @@ export default function AddAssetScreen() {
       baseAsset.currentPrice = 0;
       baseAsset.monthlyIncome = parseFloat(monthlyIncome);
       baseAsset.dueDate = dueDate;
+    } else if (selectedType === 'other') {
+      if (!symbol.trim() || !purchasePrice.trim() || !quantity.trim() || !marketValue.trim()) return;
+      baseAsset.name = symbol;
+      baseAsset.quantity = parseFloat(quantity);
+      baseAsset.purchasePrice = parseFloat(purchasePrice);
+      baseAsset.currentPrice = parseFloat(marketValue);
     }
 
     addAsset(baseAsset);
@@ -131,6 +139,10 @@ export default function AddAssetScreen() {
     } else if (selectedType === 'fixed-income') {
       return monthlyIncome.trim() !== '' && !isNaN(parseFloat(monthlyIncome)) &&
              dueDate.trim() !== '';
+    } else if (selectedType === 'other') {
+      return purchasePrice.trim() !== '' && !isNaN(parseFloat(purchasePrice)) &&
+             quantity.trim() !== '' && !isNaN(parseFloat(quantity)) &&
+             marketValue.trim() !== '' && !isNaN(parseFloat(marketValue));
     }
     return false;
   })();
@@ -442,6 +454,59 @@ export default function AddAssetScreen() {
                       onChangeText={setDueDate}
                       placeholder="2030-12-31"
                       placeholderTextColor={Colors.text.tertiary}
+                      returnKeyType="done"
+                      onSubmitEditing={handleSubmit}
+                    />
+                  </View>
+                </>
+              )}
+              {selectedType === 'other' && (
+                <>
+                  <View style={styles.formGroup}>
+                    <Text style={styles.formLabel}>Name</Text>
+                    <TextInput
+                      style={styles.inputLarge}
+                      value={symbol}
+                      onChangeText={setSymbol}
+                      placeholder="Vintage Watch"
+                      placeholderTextColor={Colors.text.tertiary}
+                      autoFocus
+                      returnKeyType="next"
+                    />
+                  </View>
+                  <View style={styles.formGroup}>
+                    <Text style={styles.formLabel}>Purchase Value (USD)</Text>
+                    <TextInput
+                      style={styles.input}
+                      value={purchasePrice}
+                      onChangeText={setPurchasePrice}
+                      placeholder="5000.00"
+                      placeholderTextColor={Colors.text.tertiary}
+                      keyboardType="decimal-pad"
+                      returnKeyType="next"
+                    />
+                  </View>
+                  <View style={styles.formGroup}>
+                    <Text style={styles.formLabel}>Quantity</Text>
+                    <TextInput
+                      style={styles.input}
+                      value={quantity}
+                      onChangeText={setQuantity}
+                      placeholder="1"
+                      placeholderTextColor={Colors.text.tertiary}
+                      keyboardType="decimal-pad"
+                      returnKeyType="next"
+                    />
+                  </View>
+                  <View style={styles.formGroup}>
+                    <Text style={styles.formLabel}>Market Value (USD)</Text>
+                    <TextInput
+                      style={styles.input}
+                      value={marketValue}
+                      onChangeText={setMarketValue}
+                      placeholder="7500.00"
+                      placeholderTextColor={Colors.text.tertiary}
+                      keyboardType="decimal-pad"
                       returnKeyType="done"
                       onSubmitEditing={handleSubmit}
                     />

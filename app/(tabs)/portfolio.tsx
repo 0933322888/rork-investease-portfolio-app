@@ -1,6 +1,6 @@
 import React, { useMemo } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert } from 'react-native';
-import { TrendingUp, Bitcoin, Gem, Receipt, Home, Wallet, ChevronRight, Pencil, Trash2, TrendingDown, DollarSign, BarChart3, Banknote, Building2, Coins, PiggyBank } from 'lucide-react-native';
+import { TrendingUp, Bitcoin, Gem, Receipt, Home, Wallet, Package, ChevronRight, Pencil, Trash2, TrendingDown, DollarSign, BarChart3, Banknote, Building2, Coins, PiggyBank } from 'lucide-react-native';
 import { useRouter } from 'expo-router';
 import Svg, { Path } from 'react-native-svg';
 import Colors from '@/constants/colors';
@@ -18,6 +18,7 @@ const ICONS = {
   Receipt,
   Home,
   Wallet,
+  Package,
 };
 
 const SPARKLINE_WIDTH = 48;
