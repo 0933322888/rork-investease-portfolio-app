@@ -20,15 +20,6 @@ const ICONS = {
   Wallet,
 };
 
-const ASSET_ICONS: Record<AssetType, any> = {
-  stocks: TrendingUp,
-  crypto: Bitcoin,
-  commodities: Gem,
-  'fixed-income': Receipt,
-  'real-estate': Building2,
-  cash: Banknote,
-};
-
 const SPARKLINE_WIDTH = 48;
 const SPARKLINE_HEIGHT = 24;
 
@@ -96,7 +87,6 @@ function AssetItem({ asset, onEdit, onDelete }: AssetItemProps) {
   const gainPercent = cost > 0 ? (gain / cost) * 100 : 0;
   const isPositive = gain >= 0;
 
-  const IconComponent = ASSET_ICONS[asset.type] || TrendingUp;
   const sparklineSeed = asset.id.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
 
   const handlePress = () => {
@@ -114,9 +104,6 @@ function AssetItem({ asset, onEdit, onDelete }: AssetItemProps) {
   return (
     <TouchableOpacity style={styles.assetItem} activeOpacity={0.7} onPress={handlePress}>
       <View style={styles.assetLeft}>
-        <View style={styles.assetIconSmall}>
-          <IconComponent size={16} color={Colors.text.secondary} strokeWidth={2} />
-        </View>
         <View style={styles.assetInfo}>
           <Text style={styles.assetName}>{asset.name}</Text>
           {asset.symbol && <Text style={styles.assetSymbol}>{asset.symbol}</Text>}

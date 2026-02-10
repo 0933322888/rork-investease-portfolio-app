@@ -1,6 +1,6 @@
 import { Tabs, usePathname } from "expo-router";
 import { Home, Layers, Plus, Sparkles, Settings, RefreshCw, Wand2, HelpCircle } from "lucide-react-native";
-import React, { useEffect, useRef, createContext, useContext, useState, useCallback } from "react";
+import React, { useEffect, useRef, createContext, useContext, useState, useCallback, useImperativeHandle, forwardRef } from "react";
 import { View, StyleSheet, Alert, Linking } from "react-native";
 import Animated, {
   useSharedValue,
@@ -38,47 +38,64 @@ function getIconForTab(tab: ActiveTab) {
   }
 }
 
-function CenterButton({ activeTab }: { activeTab: ActiveTab }) {
-  const scale = useSharedValue(1);
-  const rotate = useSharedValue(0);
-  const prevTab = useRef(activeTab);
-
-  useEffect(() => {
-    if (prevTab.current !== activeTab) {
-      prevTab.current = activeTab;
-      scale.value = withSequence(
-        withTiming(0.6, { duration: 120, easing: Easing.out(Easing.quad) }),
-        withSpring(1, { damping: 10, stiffness: 200 })
-      );
-      rotate.value = withSequence(
-        withTiming(rotate.value + 180, {
-          duration: 300,
-          easing: Easing.out(Easing.cubic),
-        })
-      );
-    }
-  }, [activeTab]);
-
-  const animatedIconStyle = useAnimatedStyle(() => ({
-    transform: [
-      { scale: scale.value },
-      { rotate: `${rotate.value}deg` },
-    ],
-  }));
-
-  return (
-    <View style={styles.addButton}>
-      <Animated.View style={animatedIconStyle}>
-        {getIconForTab(activeTab)}
-      </Animated.View>
-    </View>
-  );
+interface CenterButtonHandle {
+  spin: () => void;
 }
+
+const CenterButton = forwardRef<CenterButtonHandle, { activeTab: ActiveTab }>(
+  ({ activeTab }, ref) => {
+    const scale = useSharedValue(1);
+    const rotate = useSharedValue(0);
+    const spinRotate = useSharedValue(0);
+    const prevTab = useRef(activeTab);
+
+    useImperativeHandle(ref, () => ({
+      spin: () => {
+        spinRotate.value = withTiming(spinRotate.value + 360, {
+          duration: 600,
+          easing: Easing.out(Easing.cubic),
+        });
+      },
+    }));
+
+    useEffect(() => {
+      if (prevTab.current !== activeTab) {
+        prevTab.current = activeTab;
+        scale.value = withSequence(
+          withTiming(0.6, { duration: 120, easing: Easing.out(Easing.quad) }),
+          withSpring(1, { damping: 10, stiffness: 200 })
+        );
+        rotate.value = withSequence(
+          withTiming(rotate.value + 180, {
+            duration: 300,
+            easing: Easing.out(Easing.cubic),
+          })
+        );
+      }
+    }, [activeTab]);
+
+    const animatedIconStyle = useAnimatedStyle(() => ({
+      transform: [
+        { scale: scale.value },
+        { rotate: `${rotate.value + spinRotate.value}deg` },
+      ],
+    }));
+
+    return (
+      <View style={styles.addButton}>
+        <Animated.View style={animatedIconStyle}>
+          {getIconForTab(activeTab)}
+        </Animated.View>
+      </View>
+    );
+  }
+);
 
 export default function TabLayout() {
   const pathname = usePathname();
   const { refreshMarketPrices, isRefreshingPrices } = usePortfolio();
   const [insightsRefreshKey, setInsightsRefreshKey] = useState(0);
+  const centerButtonRef = useRef<CenterButtonHandle>(null);
 
   const triggerInsightsRefresh = useCallback(() => {
     setInsightsRefreshKey((k) => k + 1);
@@ -138,7 +155,7 @@ export default function TabLayout() {
           name="add"
           options={{
             title: "",
-            tabBarIcon: () => <CenterButton activeTab={activeTab} />,
+            tabBarIcon: () => <CenterButton ref={centerButtonRef} activeTab={activeTab} />,
             tabBarLabel: () => null,
           }}
           listeners={({ navigation }) => ({
@@ -146,6 +163,7 @@ export default function TabLayout() {
               e.preventDefault();
               if (activeTab === "portfolio") {
                 if (!isRefreshingPrices) {
+                  centerButtonRef.current?.spin();
                   refreshMarketPrices();
                 }
               } else if (activeTab === "insights") {
