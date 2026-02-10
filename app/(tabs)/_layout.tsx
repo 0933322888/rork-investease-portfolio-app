@@ -1,7 +1,7 @@
 import { Tabs, usePathname } from "expo-router";
-import { Home, Layers, Plus, Sparkles, Settings, RefreshCw, Wand2 } from "lucide-react-native";
+import { Home, Layers, Plus, Sparkles, Settings, RefreshCw, Wand2, HelpCircle } from "lucide-react-native";
 import React, { useEffect, useRef, createContext, useContext, useState, useCallback } from "react";
-import { View, StyleSheet } from "react-native";
+import { View, StyleSheet, Alert, Linking } from "react-native";
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
@@ -31,6 +31,8 @@ function getIconForTab(tab: ActiveTab) {
       return <RefreshCw size={24} color="#FFFFFF" strokeWidth={2.5} />;
     case "insights":
       return <Wand2 size={24} color="#FFFFFF" strokeWidth={2.5} />;
+    case "settings":
+      return <HelpCircle size={24} color="#FFFFFF" strokeWidth={2.5} />;
     default:
       return <Plus size={24} color="#FFFFFF" strokeWidth={2.5} />;
   }
@@ -148,6 +150,22 @@ export default function TabLayout() {
                 }
               } else if (activeTab === "insights") {
                 triggerInsightsRefresh();
+              } else if (activeTab === "settings") {
+                Alert.alert(
+                  "Help & Support",
+                  "How can we help you?",
+                  [
+                    {
+                      text: "Email Support",
+                      onPress: () => Linking.openURL("mailto:support@investease.app?subject=Help%20Request"),
+                    },
+                    {
+                      text: "FAQs",
+                      onPress: () => {},
+                    },
+                    { text: "Cancel", style: "cancel" },
+                  ]
+                );
               } else {
                 navigation.navigate('add-asset');
               }
