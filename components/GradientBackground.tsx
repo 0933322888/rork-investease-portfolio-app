@@ -5,10 +5,10 @@ import { LinearGradient } from 'expo-linear-gradient';
 export default function GradientBackground() {
   return (
     <LinearGradient
-      colors={['#0B1220', '#101D35', '#0E1628', '#0B1220']}
+      colors={['#284379', '#162a4f', '#0E1628', '#0B1220']}
       locations={[0, 0.35, 0.7, 1]}
-      start={{ x: 0.1, y: 0 }}
-      end={{ x: 0.9, y: 1 }}
+      start={{ x: 1, y: 0 }}
+      end={{ x: 0, y: 1 }}
       style={StyleSheet.absoluteFill}
     />
   );
