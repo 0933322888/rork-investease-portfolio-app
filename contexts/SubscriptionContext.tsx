@@ -1,7 +1,7 @@
 import createContextHook from '@nkzw/create-context-hook';
 
 export const [SubscriptionContext, useSubscription] = createContextHook(() => {
-  const isPremium = false;
+  const isPremium = true;
   const isLoading = false;
 
   return {
