@@ -59,7 +59,7 @@ function SettingItem({ icon, title, subtitle, onPress, badge, locked, destructiv
   );
 }
 
-function UserProfileCard() {
+function UserProfileCard({ isPremium }: { isPremium: boolean }) {
   const userHook = useUser?.();
   const user = userHook?.user;
   const isLoaded = userHook?.isLoaded ?? false;
@@ -94,7 +94,15 @@ function UserProfileCard() {
         </View>
       )}
       <View style={styles.profileInfo}>
-        <Text style={styles.profileName}>{displayName}</Text>
+        <View style={styles.profileNameRow}>
+          <Text style={styles.profileName}>{displayName}</Text>
+          {isPremium && (
+            <View style={styles.profilePremiumBadge}>
+              <Crown size={12} color="#FFFFFF" fill={Colors.accent} strokeWidth={2} />
+              <Text style={styles.profilePremiumText}>PRO</Text>
+            </View>
+          )}
+        </View>
         {email ? <Text style={styles.profileEmail}>{email}</Text> : null}
       </View>
     </View>
@@ -213,22 +221,24 @@ export default function SettingsScreen() {
 
         <View style={styles.section}>
           <View style={styles.settingGroup}>
-            <UserProfileCard />
+            <UserProfileCard isPremium={isPremium} />
           </View>
         </View>
 
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Subscription</Text>
-          <View style={styles.settingGroup}>
-            <SettingItem
-              icon={<Crown size={22} color={Colors.accent} strokeWidth={2} />}
-              title="Upgrade to Premium"
-              subtitle="Unlock advanced insights"
-              onPress={handleUpgrade}
-              badge="Pro"
-            />
+        {!isPremium && (
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Subscription</Text>
+            <View style={styles.settingGroup}>
+              <SettingItem
+                icon={<Crown size={22} color={Colors.accent} strokeWidth={2} />}
+                title="Upgrade to Premium"
+                subtitle="Unlock advanced insights"
+                onPress={handleUpgrade}
+                badge="Pro"
+              />
+            </View>
           </View>
-        </View>
+        )}
 
         <View style={styles.section}>
           <View style={styles.sectionTitleRow}>
@@ -391,6 +401,26 @@ const styles = StyleSheet.create({
   profileInfo: {
     flex: 1,
     gap: 4,
+  },
+  profileNameRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+  },
+  profilePremiumBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    backgroundColor: Colors.accent,
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: borderRadius.full,
+  },
+  profilePremiumText: {
+    fontSize: 10,
+    fontWeight: '800' as const,
+    color: '#FFFFFF',
+    letterSpacing: 0.5,
   },
   profileName: {
     ...typography.headline,
