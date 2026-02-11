@@ -11,19 +11,36 @@ const getBaseUrl = () => {
   if (url) {
     return url;
   }
-  
+
   if (typeof window !== "undefined") {
     return window.location.origin;
   }
-  
+
   return "http://localhost:3001";
 };
+
+let clerkTokenGetter: (() => Promise<string | null>) | null = null;
+
+export function setClerkTokenGetter(getter: () => Promise<string | null>) {
+  clerkTokenGetter = getter;
+}
 
 export const trpcClient = trpc.createClient({
   links: [
     httpLink({
       url: `${getBaseUrl()}/api/trpc`,
       transformer: superjson,
+      async headers() {
+        if (clerkTokenGetter) {
+          try {
+            const token = await clerkTokenGetter();
+            if (token) {
+              return { Authorization: `Bearer ${token}` };
+            }
+          } catch {}
+        }
+        return {};
+      },
     }),
   ],
 });

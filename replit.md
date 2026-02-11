@@ -1,7 +1,7 @@
-# InvestEase Portfolio App
+# Assetra Portfolio App
 
 ## Overview
-A cross-platform React Native investment portfolio tracking app built with Expo. It allows users to track stocks, crypto, real estate, and other investments in one place.
+A cross-platform React Native investment portfolio tracking app built with Expo. It allows users to track stocks, crypto, real estate, and other investments in one place. Features production-grade authentication with Clerk, biometric app lock, and a premium dark fintech UI.
 
 ## Project Architecture
 
@@ -10,11 +10,14 @@ A cross-platform React Native investment portfolio tracking app built with Expo.
 - **UI Components**: React Native Web for web compatibility
 - **State Management**: TanStack React Query + Zustand
 - **Icons**: Lucide React Native
+- **Auth**: Clerk (Expo SDK) with SecureStore token cache
 
 ### Backend
 - **API Framework**: Hono (lightweight web framework)
 - **RPC**: tRPC for type-safe API calls
-- **External Services**: Plaid, SnapTrade, Coinbase, and FMP (Financial Modeling Prep) integrations
+- **Database**: PostgreSQL (Replit built-in) with Drizzle ORM
+- **Auth Middleware**: Clerk JWT verification via @clerk/backend
+- **External Services**: Plaid, SnapTrade, Coinbase, and FMP integrations
 - **Market Data**: FMP API via `/stable/` endpoints for real-time quotes, historical prices, and company profiles
 
 ### Tech Stack
@@ -25,24 +28,33 @@ A cross-platform React Native investment portfolio tracking app built with Expo.
 ## Project Structure
 ```
 ├── app/                    # App screens (Expo Router)
+│   ├── (auth)/            # Auth screens (sign-in, sign-up)
 │   ├── (tabs)/            # Tab navigation screens (home, portfolio, insights, settings)
-│   ├── _layout.tsx        # Root layout with providers
+│   ├── _layout.tsx        # Root layout with ClerkProvider + auth redirect
 │   ├── onboarding.tsx     # Onboarding screen
 │   ├── add-asset.tsx      # Add new asset modal
 │   ├── risk-fingerprint.tsx # Risk assessment modal
 │   └── connect-plaid.tsx  # Plaid connection modal
 ├── backend/               # Server-side code
+│   ├── db/               # Database (Drizzle ORM schema, migration, connection)
+│   ├── middleware/        # Clerk JWT auth middleware for Hono
 │   ├── hono.ts           # Hono app setup
 │   ├── trpc/             # tRPC router configuration
 │   └── lib/              # Backend utilities (Plaid, SnapTrade, Coinbase clients)
+├── providers/             # App providers
+│   └── ClerkProvider.tsx  # Clerk auth provider with SecureStore
+├── hooks/                 # Custom hooks
+│   └── useAppLock.ts     # Biometric app lock hook (native only)
+├── components/            # Shared components
+│   └── AppLockOverlay.tsx # Biometric unlock overlay
 ├── lib/                   # Shared libraries
-│   └── trpc.ts           # tRPC client setup
+│   └── trpc.ts           # tRPC client setup (with auth headers)
 ├── contexts/             # React contexts
 ├── constants/            # App constants (colors, typography, spacing)
 ├── types/                # TypeScript type definitions
 ├── utils/                # Utility functions
 ├── assets/               # Static assets (images, icons)
-├── server.ts             # Production server (Hono + static files)
+├── server.ts             # Production server (Hono + static files + auth endpoints)
 ├── start.sh              # Startup script
 └── dist/                 # Built web app (generated)
 ```
@@ -61,84 +73,96 @@ The app builds and serves automatically. The workflow:
 - `bun run server` - Run just the server (requires pre-built dist/)
 
 ### Environment Variables
-The app uses Plaid and SnapTrade for financial account linking. Required secrets:
+Required secrets:
+- `EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY` - Clerk publishable key (frontend)
+- `CLERK_SECRET_KEY` - Clerk secret key (backend JWT verification)
 - `PLAID_CLIENT_ID` - Plaid API client ID
 - `PLAID_SECRET` - Plaid API secret
 - `SNAPTRADE_CLIENT_ID` - SnapTrade API client ID
 - `SNAPTRADE_CONSUMER_KEY` - SnapTrade API consumer key
-- `FMP_API_KEY` - Financial Modeling Prep API key (for market prices, historical data, profiles)
+- `FMP_API_KEY` - Financial Modeling Prep API key
+
+Database (auto-configured by Replit):
+- `DATABASE_URL` - PostgreSQL connection string
+
+## Authentication Flow
+1. App starts → ClerkProvider wraps the app
+2. If no Clerk keys → auth is bypassed, app works normally
+3. If Clerk keys present → unauthenticated users redirect to sign-in
+4. Sign-in options: Apple, Google, Email magic link
+5. After login → user auto-created in PostgreSQL (bootstrap endpoint)
+6. Clerk JWT attached to all API requests
+7. On native devices: biometric lock after 5 min in background
 
 ## API Endpoints
 - `GET /api/health` - Health check
-- `/api/trpc/*` - tRPC endpoints (Plaid, SnapTrade, Coinbase, and Market Data)
+- `POST /api/auth/bootstrap` - Create/fetch user profile (protected)
+- `/api/trpc/*` - tRPC endpoints
+  - `auth.bootstrap` - Create user + portfolio in DB
+  - `auth.getProfile` - Get user profile
   - `marketData.getQuote` - Single symbol real-time quote
-  - `marketData.getQuotes` - Multiple symbol quotes (fetched in parallel)
-  - `marketData.getHistoricalPrices` - Historical prices with range filter (1M/3M/6M/1Y/5Y)
-  - `marketData.getProfile` - Company profile (sector, country, industry, marketCap)
+  - `marketData.getQuotes` - Multiple symbol quotes
+  - `marketData.getHistoricalPrices` - Historical prices with range filter
+  - `marketData.getProfile` - Company profile
   - `marketData.getProfiles` - Multiple company profiles
-  - `marketData.getMarketData` - Unified facade with auto symbol mapping (crypto/commodity)
+  - `marketData.getMarketData` - Unified facade with auto symbol mapping
+
+## Database Schema (PostgreSQL)
+### Users table
+- id (UUID, primary key)
+- clerk_user_id (VARCHAR, unique)
+- email, first_name, last_name, avatar_url
+- subscription_status (default: "free")
+- created_at, updated_at
+
+### Portfolios table
+- id (UUID, primary key)
+- user_id (UUID, references users)
+- base_currency (default: "USD")
+- total_value (NUMERIC)
+- last_calculated_at, created_at, updated_at
 
 ## Key Features
-- Portfolio tracking for multiple asset types
-- Real-time balance updates
+- Portfolio tracking for multiple asset types (stocks, crypto, commodities, fixed-income, real estate, cash, other)
+- Real-time balance updates via FMP API
 - Risk fingerprint assessment
+- Clerk authentication (Apple, Google, email magic link)
+- Biometric app lock (FaceID/Fingerprint on native)
 - Plaid integration for bank account linking
-- SnapTrade integration for brokerage connections (Alpaca, Webull, Trading 212, etc.)
+- SnapTrade integration for brokerage connections
+- Coinbase integration for crypto balances
+- Premium insights with detailed analytics
 - Onboarding flow
-- 5-tab navigation (Home, Portfolio, + Add, Insights, Settings) with centered floating Add button
+- 5-tab navigation (Home, Portfolio, + Add, Insights, Settings)
 
 ## Recent Changes
+- **Authentication System (Feb 2026)**:
+  - Added Clerk authentication with Apple, Google, email magic link sign-in
+  - ClerkProvider with SecureStore token cache (native) for secure session persistence
+  - Auth screens (sign-in, sign-up) with dark fintech UI
+  - Route protection with auth redirect in root layout
+  - Clerk JWT verification middleware for Hono backend
+  - User bootstrap endpoint (REST + tRPC) for auto-creating user/portfolio in DB
+  - Secure API client attaching Clerk JWT to all tRPC requests
+  - Biometric app lock (FaceID/Fingerprint) after 5 min background, native only
+  - PostgreSQL database with Drizzle ORM (users + portfolios tables)
+  - Graceful fallback: app works normally without Clerk keys configured
+- **Premium Insights Enhancement (Feb 2026)**:
+  - Total Return section with 1M, 1Y, All Time returns (% and dollar amounts)
+  - Cost basis vs current value breakdown
+  - Diversification score badge (Low/Fair/Good/Excellent)
+  - Per-type allocation with individual gain/loss
+  - Concentration Risk with top 5 holdings
+  - Recommendations based on portfolio data
+- **Assetra Branding (Feb 2026)**:
+  - Renamed from InvestEase to Assetra
+  - Custom logo on home page and onboarding
 - **Market Data Service (Feb 2026)**:
-  - Added FMP (Financial Modeling Prep) integration using `/stable/` API endpoints
-  - Real-time quotes for stocks, crypto (auto-maps BTC→BTCUSD)
-  - Historical price data with range filtering (1M/3M/6M/1Y/5Y)
-  - Company profiles with sector, country, industry, marketCap
-  - 5-minute in-memory cache for quotes, 30-day cache for profiles
-  - Unified facade service with symbol normalization
-  - tRPC routes for all market data endpoints
-  - Note: Commodity quotes (XAUUSD/XAGUSD) require FMP premium plan
-  - Note: Batch quotes fetched individually (free tier limitation)
-- **Dark Mode Redesign (Feb 2026)**:
-  - Switched entire app to dark-first color scheme (#0D0D14 background, #1A1A2E cards)
-  - Updated all screens (home, portfolio, insights, settings, modals) for dark mode
-  - Fixed all Colors.card text references to #FFFFFF for proper contrast
-  - Updated onboarding gradients to dark-themed palettes
-- **5-Tab Navigation (Feb 2026)**:
-  - Added centered floating + Add Asset button in tab bar
-  - 5 tabs: Home, Portfolio, + (floating), Insights, Settings
-  - Tab bar uses #111122 background with subtle border
-- **Home Page Premium Redesign (Feb 2026)**:
-  - Greeting header with time-based salutation, full date, and tappable avatar
-  - Glass/gradient Net Worth card with blue glow effect, percentage pill, tappable to portfolio
-  - "7D" label on sparkline chart
-  - Allocation donut chart with tappable category rows linking to portfolio
-  - Portfolio Health score with progress gauge bar
-  - Connected Accounts horizontal scroll with per-type cards and "Add account" button
-  - Insights section with icon-prefixed actionable items
-- **Live Market Prices on Portfolio (Feb 2026)**:
-  - Auto-fetches real-time prices for stocks and crypto via FMP API on page load
-  - Updates currentPrice on assets with symbols, recalculates portfolio totals
-  - Refresh button (RefreshCw icon) in portfolio header for manual price refresh
-  - "Prices updated X ago" timestamp indicator
-  - Prices persisted to AsyncStorage after update
-  - Uses ref guard for single initial auto-refresh, proper error handling
-- **UI Design Improvements (Feb 2026)**:
-  - Added portfolio summary card at top of Portfolio page showing total value, gain/loss with percentage pill, and asset count
-  - Added asset type icons (stocks, crypto, real estate, etc.) for visual recognition
-  - Added mini sparkline charts (7-day trend) next to each asset in green/red
-  - Improved asset items with edit/delete functionality via tap menu
-- Premium gating for Connected Accounts section (Settings) and Insights page
-- Added SnapTrade integration for brokerage account connections
+  - FMP integration for real-time quotes, historical prices, company profiles
 - **Coinbase Integration (Feb 2026)**:
-  - Added read-only Coinbase API integration via API key/secret
-  - Backend HMAC-SHA256 request signing for Coinbase Advanced Trade API
-  - Connect Coinbase screen with step-by-step instructions
-  - Auto-import crypto balances from Coinbase accounts
-  - "Connect Coinbase" card in Add Asset > Crypto flow with divider for manual entry
-  - Deduplication logic to prevent duplicate assets on reconnect
-  - Stored credentials in AsyncStorage (consistent with existing Plaid/SnapTrade pattern)
+  - Read-only Coinbase API integration via API key/secret
 - Configured for Replit deployment
-- Using static export for web instead of dev server (file watcher limitations)
+- Using static export for web instead of dev server
 - Combined backend API with static file serving on port 5000
 
 ## Design Notes
@@ -146,12 +170,8 @@ The app uses Plaid and SnapTrade for financial account linking. Required secrets
 - **Color Scheme**: Purple-blue accent (#6C8CFF), green for gains (#32D583), red for losses (#FF6B6B)
 - **Asset Colors**: Stocks #6C8CFF, Crypto #F5B14C, Cash #58D68D, Real Estate #FF7A7A, Other #B8C1EC
 - **Text Colors**: White primary (#FFFFFF), blue-tinted secondary (#9FB0D0)
+- **Auth Screens**: Centered layout, large OAuth buttons, email input with magic link
 - **Premium Badge**: Sparkles icon with pill shape
-- **Locked Items**: Use opacity 0.7 and lock icons to indicate premium-only features
-- **Charts**: SVG-based sparkline with gradient fill
 - **Cards**: 24px border radius, shadow (shadowRadius: 20, shadowOpacity: 0.3)
-- **Chips**: borderRadius 20, cardSoft background, 6/12 padding
-- **CTA Button**: Green #3FAF7F, height 48, borderRadius 24
-- **Connected Account Cards**: 180px wide, borderRadius 20, cardSoft background
-- **Tab Bar**: Card background with rounded top corners (24px), 64px floating + button with accent glow
+- **Tab Bar**: Card background with rounded top corners (24px), 64px floating + button
 - **Animations**: Reanimated fade+slide-up on native, plain View fallback on web

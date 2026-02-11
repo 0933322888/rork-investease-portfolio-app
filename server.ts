@@ -5,6 +5,9 @@ import { serveStatic } from "hono/bun";
 import { trpcServer } from "@hono/trpc-server";
 import { appRouter } from "./backend/trpc/app-router";
 import { createContext } from "./backend/trpc/create-context";
+import { clerkAuthMiddleware, getAuthUser } from "./backend/middleware/auth";
+import { db, schema } from "./backend/db";
+import { eq } from "drizzle-orm";
 
 const app = new Hono();
 
@@ -20,7 +23,66 @@ app.use(
 );
 
 app.get("/api/health", (c) => {
-  return c.json({ status: "ok", message: "Portfolio Tracker API is running" });
+  return c.json({ status: "ok", message: "Assetra API is running" });
+});
+
+app.post("/api/auth/bootstrap", clerkAuthMiddleware, async (c) => {
+  const user = getAuthUser(c);
+  if (!user) {
+    return c.json({ error: "Unauthorized" }, 401);
+  }
+
+  try {
+    const body = await c.req.json().catch(() => ({}));
+
+    const existingUsers = await db
+      .select()
+      .from(schema.users)
+      .where(eq(schema.users.clerkUserId, user.clerkUserId))
+      .limit(1);
+
+    if (existingUsers.length > 0) {
+      const dbUser = existingUsers[0];
+      const portfolios = await db
+        .select()
+        .from(schema.portfolios)
+        .where(eq(schema.portfolios.userId, dbUser.id))
+        .limit(1);
+
+      return c.json({
+        user: dbUser,
+        portfolio: portfolios[0] || null,
+        isNew: false,
+      });
+    }
+
+    const [newUser] = await db
+      .insert(schema.users)
+      .values({
+        clerkUserId: user.clerkUserId,
+        email: body.email,
+        firstName: body.firstName,
+        lastName: body.lastName,
+        avatarUrl: body.avatarUrl,
+      })
+      .returning();
+
+    const [newPortfolio] = await db
+      .insert(schema.portfolios)
+      .values({
+        userId: newUser.id,
+      })
+      .returning();
+
+    return c.json({
+      user: newUser,
+      portfolio: newPortfolio,
+      isNew: true,
+    });
+  } catch (error) {
+    console.error("[Bootstrap] Error:", error);
+    return c.json({ error: "Internal server error" }, 500);
+  }
 });
 
 app.use("/_expo/*", async (c, next) => {
