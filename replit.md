@@ -136,6 +136,14 @@ Database (auto-configured by Replit):
 - 5-tab navigation (Home, Portfolio, + Add, Insights, Settings)
 
 ## Recent Changes
+- **Premium Subscription Flow (Feb 2026)**:
+  - Premium paywall screen (`app/premium.tsx`) with feature list, pricing, and upgrade button
+  - tRPC endpoints for reading/updating subscription status from PostgreSQL
+  - SubscriptionContext reads real subscription status from DB (no longer hardcoded)
+  - Subscription query only fires when user is signed in (auth-gated)
+  - Settings hides "Upgrade to Premium" when already premium
+  - PRO badge with crown icon shown on profile card for premium users
+  - Premium screen handles already-premium state gracefully
 - **Authentication System (Feb 2026)**:
   - Added Clerk authentication with Apple, Google, email magic link sign-in
   - ClerkProvider with SecureStore token cache (native) for secure session persistence
