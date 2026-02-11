@@ -358,7 +358,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   scrollContent: {
-    paddingTop: spacing.md,
+    paddingTop: spacing.sm,
     paddingBottom: 160,
   },
   logoHeader: {
@@ -366,15 +366,17 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: spacing.lg,
-    marginBottom: spacing.lg,
+    marginBottom: spacing.md,
+    paddingTop: spacing.sm,
   },
   logoImage: {
-    width: 140,
-    height: 40,
+    width: 110,
+    height: 32,
   },
   dateText: {
-    ...typography.footnote,
-    color: Colors.text.secondary,
+    ...typography.caption,
+    color: Colors.text.tertiary,
+    fontSize: 11,
   },
   heroCard: {
     backgroundColor: Colors.card,
