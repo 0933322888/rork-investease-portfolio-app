@@ -94,4 +94,37 @@ export const authRouter = createTRPCRouter({
         portfolio: portfolios[0] || null,
       };
     }),
+
+  getSubscriptionStatus: protectedProcedure
+    .query(async ({ ctx }) => {
+      const users = await db
+        .select({ subscriptionStatus: schema.users.subscriptionStatus })
+        .from(schema.users)
+        .where(eq(schema.users.clerkUserId, ctx.clerkUserId))
+        .limit(1);
+
+      if (users.length === 0) return { status: "free" as const };
+      return { status: users[0].subscriptionStatus as "free" | "premium" };
+    }),
+
+  updateSubscription: protectedProcedure
+    .input(z.object({
+      status: z.enum(["free", "premium"]),
+    }))
+    .mutation(async ({ ctx, input }) => {
+      const result = await db
+        .update(schema.users)
+        .set({
+          subscriptionStatus: input.status,
+          updatedAt: new Date(),
+        })
+        .where(eq(schema.users.clerkUserId, ctx.clerkUserId))
+        .returning();
+
+      if (result.length === 0) {
+        throw new Error("User not found");
+      }
+
+      return { status: result[0].subscriptionStatus };
+    }),
 });

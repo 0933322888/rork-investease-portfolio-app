@@ -190,7 +190,7 @@ export default function SettingsScreen() {
   };
 
   const handleUpgrade = () => {
-    Alert.alert('Premium', 'Upgrade to premium to unlock advanced insights and analytics');
+    router.push('/premium');
   };
 
   const handleNotifications = () => {
