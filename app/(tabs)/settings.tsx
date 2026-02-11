@@ -1,7 +1,7 @@
 import React from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert, Image } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Bell, Info, Mail, Shield, ChevronRight, Crown, Link, RefreshCw, Building2, Briefcase, Lock, Sparkles, Trash2, LogOut, User } from 'lucide-react-native';
+import { Bell, Info, Mail, Shield, ChevronRight, Crown, Link, RefreshCw, Building2, Briefcase, Lock, Sparkles, Trash2 } from 'lucide-react-native';
 import { useRouter } from 'expo-router';
 import Colors from '@/constants/colors';
 import GradientBackground from '@/components/GradientBackground';
@@ -9,7 +9,6 @@ import { spacing, borderRadius } from '@/constants/spacing';
 import { typography } from '@/constants/typography';
 import { usePortfolio } from '@/contexts/PortfolioContext';
 import { useSubscription } from '@/contexts/SubscriptionContext';
-import { useAuth } from '@/contexts/AuthContext';
 
 interface SettingItemProps {
   icon: React.ReactNode;
@@ -55,7 +54,6 @@ export default function SettingsScreen() {
   const router = useRouter();
   const { plaidAccounts, refreshPlaidBalances, removeAllPlaidAccounts } = usePortfolio();
   const { isPremium } = useSubscription();
-  const { user, logout } = useAuth();
   const [isRefreshing, setIsRefreshing] = React.useState(false);
 
   const handleConnectBank = () => {
@@ -132,24 +130,6 @@ export default function SettingsScreen() {
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
-        {user && (
-          <View style={styles.profileCard}>
-            <View style={styles.profileAvatar}>
-              {user.profileImageUrl ? (
-                <Image source={{ uri: user.profileImageUrl }} style={styles.profileAvatarImage} />
-              ) : (
-                <User size={28} color={Colors.text.secondary} strokeWidth={2} />
-              )}
-            </View>
-            <View style={styles.profileInfo}>
-              <Text style={styles.profileName}>
-                {[user.firstName, user.lastName].filter(Boolean).join(' ') || 'User'}
-              </Text>
-              {user.email && <Text style={styles.profileEmail}>{user.email}</Text>}
-            </View>
-          </View>
-        )}
-
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Subscription</Text>
           <View style={styles.settingGroup}>
@@ -251,15 +231,6 @@ export default function SettingsScreen() {
               subtitle="App version and info"
               onPress={handleAbout}
             />
-          </View>
-        </View>
-
-        <View style={styles.section}>
-          <View style={styles.settingGroup}>
-            <TouchableOpacity style={styles.logoutButton} onPress={logout} activeOpacity={0.7}>
-              <LogOut size={20} color="#FF6B6B" strokeWidth={2} />
-              <Text style={styles.logoutText}>Sign Out</Text>
-            </TouchableOpacity>
           </View>
         </View>
 
@@ -393,59 +364,9 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.border.light,
     marginLeft: spacing.lg + 40 + spacing.md,
   },
-  profileCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: Colors.card,
-    borderRadius: borderRadius.lg,
-    padding: spacing.lg,
-    marginBottom: spacing.xl,
-    gap: spacing.md,
-    borderWidth: 1,
-    borderColor: Colors.border.light,
-  },
-  profileAvatar: {
-    width: 56,
-    height: 56,
-    borderRadius: 28,
-    backgroundColor: Colors.background,
-    alignItems: 'center',
-    justifyContent: 'center',
-    overflow: 'hidden',
-  },
-  profileAvatarImage: {
-    width: 56,
-    height: 56,
-    borderRadius: 28,
-  },
-  profileInfo: {
-    flex: 1,
-    gap: 4,
-  },
-  profileName: {
-    ...typography.headline,
-    color: Colors.text.primary,
-  },
-  profileEmail: {
-    ...typography.footnote,
-    color: Colors.text.secondary,
-  },
-  logoutButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: spacing.sm,
-    paddingVertical: spacing.md,
-  },
-  logoutText: {
-    ...typography.callout,
-    color: '#FF6B6B',
-    fontWeight: '600' as const,
-  },
   footer: {
     alignItems: 'center',
     paddingVertical: spacing.xl,
-    paddingBottom: 120,
     gap: spacing.xs,
   },
   footerText: {
