@@ -150,27 +150,38 @@ function PremiumInsights() {
     shadowRadius: headerGlow.value * 20,
   }));
 
+  const now = Date.now();
+  const ONE_MONTH = 30 * 24 * 60 * 60 * 1000;
+  const ONE_YEAR = 365 * 24 * 60 * 60 * 1000;
+
   const totalValue = assets.reduce((sum, a) => sum + (a.currentPrice || a.purchasePrice) * a.quantity, 0);
+  const totalCost = assets.reduce((sum, a) => sum + a.purchasePrice * a.quantity, 0);
 
   const typeBreakdown: Record<string, number> = {};
+  const typeCost: Record<string, number> = {};
   assets.forEach(a => {
     const type = a.type || 'other';
     typeBreakdown[type] = (typeBreakdown[type] || 0) + (a.currentPrice || a.purchasePrice) * a.quantity;
+    typeCost[type] = (typeCost[type] || 0) + a.purchasePrice * a.quantity;
   });
 
   const typeColors: Record<string, string> = {
-    stock: '#6C8CFF',
+    stocks: '#6C8CFF',
     crypto: '#F5B14C',
     cash: '#58D68D',
     'real-estate': '#FF7A7A',
+    commodities: '#E0A458',
+    'fixed-income': '#9B8FFF',
     other: '#B8C1EC',
   };
 
   const typeLabels: Record<string, string> = {
-    stock: 'Stocks',
+    stocks: 'Stocks',
     crypto: 'Crypto',
     cash: 'Cash',
     'real-estate': 'Real Estate',
+    commodities: 'Commodities',
+    'fixed-income': 'Fixed Income',
     other: 'Other',
   };
 
@@ -178,12 +189,29 @@ function PremiumInsights() {
   const topType = sortedTypes[0];
   const concentrationPct = topType ? ((topType[1] / totalValue) * 100).toFixed(0) : '0';
 
-  const totalGain = assets.reduce((sum, a) => {
-    const current = (a.currentPrice || a.purchasePrice) * a.quantity;
-    const purchase = a.purchasePrice * a.quantity;
-    return sum + (current - purchase);
-  }, 0);
-  const totalGainPct = totalValue > 0 ? ((totalGain / (totalValue - totalGain)) * 100).toFixed(1) : '0';
+  const totalGain = totalValue - totalCost;
+  const totalGainPct = totalCost > 0 ? ((totalGain / totalCost) * 100).toFixed(1) : '0';
+
+  const calcPeriodReturn = (periodMs: number) => {
+    const cutoff = now - periodMs;
+    const periodAssets = assets.filter(a => {
+      const addedTime = a.purchaseDate ? new Date(a.purchaseDate).getTime() : (a.addedAt || now);
+      return addedTime >= cutoff;
+    });
+    if (periodAssets.length === 0) return { gain: 0, pct: '0.0', count: 0 };
+    const pCost = periodAssets.reduce((s, a) => s + a.purchasePrice * a.quantity, 0);
+    const pValue = periodAssets.reduce((s, a) => s + (a.currentPrice || a.purchasePrice) * a.quantity, 0);
+    const pGain = pValue - pCost;
+    return { gain: pGain, pct: pCost > 0 ? ((pGain / pCost) * 100).toFixed(1) : '0.0', count: periodAssets.length };
+  };
+
+  const return1m = calcPeriodReturn(ONE_MONTH);
+  const return1y = calcPeriodReturn(ONE_YEAR);
+
+  const topHoldings = [...assets]
+    .map(a => ({ ...a, value: (a.currentPrice || a.purchasePrice) * a.quantity }))
+    .sort((a, b) => b.value - a.value)
+    .slice(0, 5);
 
   const uniqueTypes = Object.keys(typeBreakdown).length;
   let diversificationScore = 'Low';
@@ -198,6 +226,12 @@ function PremiumInsights() {
     diversificationScore = 'Fair';
     diversificationColor = '#F5B14C';
   }
+
+  const fmtMoney = (v: number) => {
+    const sign = v >= 0 ? '+' : '-';
+    return `${sign}$${Math.abs(v).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+  };
+  const fmtPct = (v: string, gain: number) => `${gain >= 0 ? '+' : ''}${v}%`;
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
@@ -219,41 +253,67 @@ function PremiumInsights() {
           </Text>
         </Animated.View>
 
-        <View style={styles.premiumCards}>
-          <InsightCard
-            icon={<PieChart size={22} color="#6C8CFF" strokeWidth={2} />}
-            title="Diversification"
-            value={diversificationScore}
-            subtitle={`${uniqueTypes} asset types across your portfolio`}
-            color="#6C8CFF"
-            index={0}
-            refreshKey={refreshKey}
-          />
-          <InsightCard
-            icon={<TrendingUp size={22} color="#32D583" strokeWidth={2} />}
-            title="Total Return"
-            value={`${totalGain >= 0 ? '+' : ''}${totalGainPct}%`}
-            subtitle={`${totalGain >= 0 ? '+' : ''}$${Math.abs(totalGain).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} overall`}
-            color={totalGain >= 0 ? '#32D583' : '#FF6B6B'}
-            index={1}
-            refreshKey={refreshKey}
-          />
-          <InsightCard
-            icon={<AlertTriangle size={22} color="#F5B14C" strokeWidth={2} />}
-            title="Concentration Risk"
-            value={`${concentrationPct}%`}
-            subtitle={topType ? `${typeLabels[topType[0]] || topType[0]} is your largest position` : 'No assets yet'}
-            color="#F5B14C"
-            index={2}
-            refreshKey={refreshKey}
-          />
+        <View style={styles.sectionHeader}>
+          <TrendingUp size={18} color={Colors.text.secondary} strokeWidth={2} />
+          <Text style={styles.sectionTitle}>Total Return</Text>
+        </View>
+        <View style={styles.detailCard}>
+          <View style={styles.returnHero}>
+            <Text style={[styles.returnHeroValue, { color: totalGain >= 0 ? '#32D583' : '#FF6B6B' }]}>
+              {fmtPct(totalGainPct, totalGain)}
+            </Text>
+            <Text style={styles.returnHeroSubtext}>{fmtMoney(totalGain)}</Text>
+          </View>
+          <View style={styles.returnDivider} />
+          <View style={styles.returnPeriods}>
+            <View style={styles.returnPeriodItem}>
+              <Text style={styles.returnPeriodLabel}>1 Month</Text>
+              <Text style={[styles.returnPeriodValue, { color: return1m.gain >= 0 ? '#32D583' : '#FF6B6B' }]}>
+                {fmtPct(return1m.pct, return1m.gain)}
+              </Text>
+              <Text style={styles.returnPeriodAmount}>{fmtMoney(return1m.gain)}</Text>
+              <Text style={styles.returnPeriodCount}>{return1m.count} asset{return1m.count !== 1 ? 's' : ''}</Text>
+            </View>
+            <View style={styles.returnPeriodDivider} />
+            <View style={styles.returnPeriodItem}>
+              <Text style={styles.returnPeriodLabel}>1 Year</Text>
+              <Text style={[styles.returnPeriodValue, { color: return1y.gain >= 0 ? '#32D583' : '#FF6B6B' }]}>
+                {fmtPct(return1y.pct, return1y.gain)}
+              </Text>
+              <Text style={styles.returnPeriodAmount}>{fmtMoney(return1y.gain)}</Text>
+              <Text style={styles.returnPeriodCount}>{return1y.count} asset{return1y.count !== 1 ? 's' : ''}</Text>
+            </View>
+            <View style={styles.returnPeriodDivider} />
+            <View style={styles.returnPeriodItem}>
+              <Text style={styles.returnPeriodLabel}>All Time</Text>
+              <Text style={[styles.returnPeriodValue, { color: totalGain >= 0 ? '#32D583' : '#FF6B6B' }]}>
+                {fmtPct(totalGainPct, totalGain)}
+              </Text>
+              <Text style={styles.returnPeriodAmount}>{fmtMoney(totalGain)}</Text>
+              <Text style={styles.returnPeriodCount}>{assets.length} asset{assets.length !== 1 ? 's' : ''}</Text>
+            </View>
+          </View>
+          <View style={styles.returnDivider} />
+          <View style={styles.returnSummaryRow}>
+            <View style={styles.returnSummaryItem}>
+              <Text style={styles.returnSummaryLabel}>Cost Basis</Text>
+              <Text style={styles.returnSummaryValue}>${totalCost.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</Text>
+            </View>
+            <View style={styles.returnSummaryItem}>
+              <Text style={styles.returnSummaryLabel}>Current Value</Text>
+              <Text style={styles.returnSummaryValue}>${totalValue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</Text>
+            </View>
+          </View>
         </View>
 
         <View style={styles.sectionHeader}>
-          <BarChart3 size={18} color={Colors.text.secondary} strokeWidth={2} />
-          <Text style={styles.sectionTitle}>Asset Allocation</Text>
+          <PieChart size={18} color={Colors.text.secondary} strokeWidth={2} />
+          <Text style={styles.sectionTitle}>Diversification</Text>
+          <View style={[styles.scoreBadge, { backgroundColor: diversificationColor + '20' }]}>
+            <Text style={[styles.scoreBadgeText, { color: diversificationColor }]}>{diversificationScore}</Text>
+          </View>
         </View>
-        <View style={styles.allocationCard}>
+        <View style={styles.detailCard}>
           {sortedTypes.length > 0 ? (
             <>
               <View style={styles.allocationBar}>
@@ -262,29 +322,81 @@ function PremiumInsights() {
                     key={type}
                     style={{
                       flex: value / totalValue,
-                      height: 8,
+                      height: 10,
                       backgroundColor: typeColors[type] || '#B8C1EC',
-                      borderRadius: 4,
+                      borderRadius: 5,
                     }}
                   />
                 ))}
               </View>
               <View style={styles.allocationList}>
-                {sortedTypes.map(([type, value]) => (
-                  <View key={type} style={styles.allocationRow}>
-                    <View style={styles.allocationLabelRow}>
-                      <View style={[styles.allocationDot, { backgroundColor: typeColors[type] || '#B8C1EC' }]} />
-                      <Text style={styles.allocationLabel}>{typeLabels[type] || type}</Text>
+                {sortedTypes.map(([type, value]) => {
+                  const cost = typeCost[type] || 0;
+                  const gain = value - cost;
+                  const gainPct = cost > 0 ? ((gain / cost) * 100).toFixed(1) : '0.0';
+                  return (
+                    <View key={type} style={styles.allocationRowExpanded}>
+                      <View style={styles.allocationLabelRow}>
+                        <View style={[styles.allocationDot, { backgroundColor: typeColors[type] || '#B8C1EC' }]} />
+                        <Text style={styles.allocationLabel}>{typeLabels[type] || type}</Text>
+                      </View>
+                      <View style={styles.allocationRightCol}>
+                        <Text style={styles.allocationValue}>
+                          {((value / totalValue) * 100).toFixed(1)}%
+                        </Text>
+                        <Text style={[styles.allocationGain, { color: gain >= 0 ? '#32D583' : '#FF6B6B' }]}>
+                          {fmtPct(gainPct, gain)}
+                        </Text>
+                      </View>
                     </View>
-                    <Text style={styles.allocationValue}>
-                      {((value / totalValue) * 100).toFixed(1)}%
-                    </Text>
-                  </View>
-                ))}
+                  );
+                })}
               </View>
             </>
           ) : (
             <Text style={styles.emptyText}>Add assets to see your allocation breakdown</Text>
+          )}
+        </View>
+
+        <View style={styles.sectionHeader}>
+          <AlertTriangle size={18} color={Colors.text.secondary} strokeWidth={2} />
+          <Text style={styles.sectionTitle}>Concentration Risk</Text>
+        </View>
+        <View style={styles.detailCard}>
+          <View style={styles.concentrationHeader}>
+            <Text style={styles.concentrationValue}>{concentrationPct}%</Text>
+            <Text style={styles.concentrationLabel}>
+              in {topType ? (typeLabels[topType[0]] || topType[0]) : 'N/A'}
+            </Text>
+          </View>
+          {topHoldings.length > 0 && (
+            <>
+              <View style={styles.returnDivider} />
+              <Text style={styles.topHoldingsTitle}>Top Holdings</Text>
+              <View style={styles.topHoldingsList}>
+                {topHoldings.map((h, i) => {
+                  const holdingPct = totalValue > 0 ? ((h.value / totalValue) * 100).toFixed(1) : '0.0';
+                  const holdingGain = h.value - h.purchasePrice * h.quantity;
+                  return (
+                    <View key={h.id} style={styles.topHoldingRow}>
+                      <View style={styles.topHoldingRank}>
+                        <Text style={styles.topHoldingRankText}>{i + 1}</Text>
+                      </View>
+                      <View style={styles.topHoldingInfo}>
+                        <Text style={styles.topHoldingName} numberOfLines={1}>{h.name}</Text>
+                        <Text style={styles.topHoldingType}>{typeLabels[h.type] || h.type}</Text>
+                      </View>
+                      <View style={styles.topHoldingValues}>
+                        <Text style={styles.topHoldingPct}>{holdingPct}%</Text>
+                        <Text style={[styles.topHoldingGain, { color: holdingGain >= 0 ? '#32D583' : '#FF6B6B' }]}>
+                          {fmtMoney(holdingGain)}
+                        </Text>
+                      </View>
+                    </View>
+                  );
+                })}
+              </View>
+            </>
           )}
         </View>
 
@@ -655,8 +767,18 @@ const styles = StyleSheet.create({
   sectionTitle: {
     ...typography.headline,
     color: Colors.text.primary,
+    flex: 1,
   },
-  allocationCard: {
+  scoreBadge: {
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.xs,
+    borderRadius: borderRadius.full,
+  },
+  scoreBadgeText: {
+    ...typography.footnote,
+    fontWeight: '700' as const,
+  },
+  detailCard: {
     backgroundColor: Colors.card,
     borderRadius: borderRadius.lg,
     padding: spacing.lg,
@@ -664,17 +786,150 @@ const styles = StyleSheet.create({
     borderColor: Colors.border.light,
     marginBottom: spacing.xl,
   },
+  returnHero: {
+    alignItems: 'center',
+    paddingVertical: spacing.md,
+  },
+  returnHeroValue: {
+    fontSize: 36,
+    fontWeight: '700' as const,
+    marginBottom: spacing.xs,
+  },
+  returnHeroSubtext: {
+    ...typography.callout,
+    color: Colors.text.secondary,
+  },
+  returnDivider: {
+    height: 1,
+    backgroundColor: Colors.border.light,
+    marginVertical: spacing.md,
+  },
+  returnPeriods: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+  },
+  returnPeriodItem: {
+    flex: 1,
+    alignItems: 'center',
+    gap: 2,
+  },
+  returnPeriodDivider: {
+    width: 1,
+    backgroundColor: Colors.border.light,
+    marginHorizontal: spacing.sm,
+  },
+  returnPeriodLabel: {
+    ...typography.footnote,
+    color: Colors.text.secondary,
+    marginBottom: 4,
+  },
+  returnPeriodValue: {
+    ...typography.headline,
+    fontWeight: '700' as const,
+  },
+  returnPeriodAmount: {
+    ...typography.caption,
+    color: Colors.text.secondary,
+  },
+  returnPeriodCount: {
+    ...typography.caption,
+    color: Colors.text.tertiary,
+    fontSize: 10,
+  },
+  returnSummaryRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+  },
+  returnSummaryItem: {
+    gap: spacing.xs,
+  },
+  returnSummaryLabel: {
+    ...typography.footnote,
+    color: Colors.text.secondary,
+  },
+  returnSummaryValue: {
+    ...typography.headline,
+    color: Colors.text.primary,
+  },
+  concentrationHeader: {
+    alignItems: 'center',
+    paddingVertical: spacing.md,
+  },
+  concentrationValue: {
+    fontSize: 36,
+    fontWeight: '700' as const,
+    color: '#F5B14C',
+    marginBottom: spacing.xs,
+  },
+  concentrationLabel: {
+    ...typography.callout,
+    color: Colors.text.secondary,
+  },
+  topHoldingsTitle: {
+    ...typography.footnote,
+    color: Colors.text.secondary,
+    fontWeight: '600' as const,
+    marginBottom: spacing.md,
+    textTransform: 'uppercase' as const,
+    letterSpacing: 0.5,
+  },
+  topHoldingsList: {
+    gap: spacing.md,
+  },
+  topHoldingRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.md,
+  },
+  topHoldingRank: {
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    backgroundColor: Colors.background,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  topHoldingRankText: {
+    ...typography.caption,
+    color: Colors.text.secondary,
+    fontWeight: '600' as const,
+  },
+  topHoldingInfo: {
+    flex: 1,
+    gap: 2,
+  },
+  topHoldingName: {
+    ...typography.callout,
+    color: Colors.text.primary,
+    fontWeight: '500' as const,
+  },
+  topHoldingType: {
+    ...typography.caption,
+    color: Colors.text.tertiary,
+  },
+  topHoldingValues: {
+    alignItems: 'flex-end',
+    gap: 2,
+  },
+  topHoldingPct: {
+    ...typography.callout,
+    color: Colors.text.primary,
+    fontWeight: '600' as const,
+  },
+  topHoldingGain: {
+    ...typography.caption,
+  },
   allocationBar: {
     flexDirection: 'row',
     gap: 2,
     marginBottom: spacing.lg,
-    borderRadius: 4,
+    borderRadius: 5,
     overflow: 'hidden',
   },
   allocationList: {
     gap: spacing.md,
   },
-  allocationRow: {
+  allocationRowExpanded: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
@@ -693,10 +948,17 @@ const styles = StyleSheet.create({
     ...typography.callout,
     color: Colors.text.primary,
   },
+  allocationRightCol: {
+    alignItems: 'flex-end',
+    gap: 2,
+  },
   allocationValue: {
     ...typography.callout,
-    color: Colors.text.secondary,
+    color: Colors.text.primary,
     fontWeight: '600' as const,
+  },
+  allocationGain: {
+    ...typography.caption,
   },
   emptyText: {
     ...typography.body,
