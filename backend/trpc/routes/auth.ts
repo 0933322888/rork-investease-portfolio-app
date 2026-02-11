@@ -112,7 +112,7 @@ export const authRouter = createTRPCRouter({
       status: z.enum(["free", "premium"]),
     }))
     .mutation(async ({ ctx, input }) => {
-      const result = await db
+      let result = await db
         .update(schema.users)
         .set({
           subscriptionStatus: input.status,
@@ -122,7 +122,17 @@ export const authRouter = createTRPCRouter({
         .returning();
 
       if (result.length === 0) {
-        throw new Error("User not found");
+        const [newUser] = await db
+          .insert(schema.users)
+          .values({
+            clerkUserId: ctx.clerkUserId,
+            subscriptionStatus: input.status,
+          })
+          .returning();
+
+        await db.insert(schema.portfolios).values({ userId: newUser.id });
+
+        return { status: newUser.subscriptionStatus };
       }
 
       return { status: result[0].subscriptionStatus };
