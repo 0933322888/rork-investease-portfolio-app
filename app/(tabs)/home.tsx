@@ -370,8 +370,8 @@ const styles = StyleSheet.create({
     paddingTop: spacing.sm,
   },
   logoImage: {
-    width: 110,
-    height: 32,
+    width: 330,
+    height: 96,
   },
   dateText: {
     ...typography.caption,
