@@ -1,5 +1,5 @@
 import { router } from 'expo-router';
-import { 
+import {
   ChevronRight, AlertCircle, DollarSign,
   Landmark,
 } from 'lucide-react-native';
@@ -367,11 +367,11 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     paddingHorizontal: spacing.lg,
     marginBottom: spacing.md,
-    paddingTop: spacing.sm,
+    paddingTop: spacing.xl,
   },
   logoImage: {
-    width: 330,
-    height: 96,
+    width: 110,
+    height: 32,
   },
   dateText: {
     ...typography.caption,
