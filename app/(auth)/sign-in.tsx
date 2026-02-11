@@ -13,7 +13,7 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
-import { Mail, ArrowRight, Smartphone } from "lucide-react-native";
+import { Mail, ArrowRight, KeyRound } from "lucide-react-native";
 import Colors from "@/constants/colors";
 import { spacing, borderRadius } from "@/constants/spacing";
 import { typography } from "@/constants/typography";
@@ -30,8 +30,9 @@ try {
 export default function SignInScreen() {
   const router = useRouter();
   const [email, setEmail] = useState("");
+  const [code, setCode] = useState("");
   const [loading, setLoading] = useState(false);
-  const [magicLinkSent, setMagicLinkSent] = useState(false);
+  const [pendingVerification, setPendingVerification] = useState(false);
   const [error, setError] = useState("");
 
   const signInHook = useSignIn?.();
@@ -55,17 +56,59 @@ export default function SignInScreen() {
     try {
       const result = await signIn.create({
         identifier: email,
-        strategy: "email_link",
-        redirectUrl: `${typeof window !== "undefined" ? window.location.origin : ""}/sso-callback`,
       });
 
-      setMagicLinkSent(true);
+      const firstFactor = result.supportedFirstFactors?.find(
+        (f: any) => f.strategy === "email_code"
+      );
+
+      if (firstFactor) {
+        await signIn.prepareFirstFactor({
+          strategy: "email_code",
+          emailAddressId: firstFactor.emailAddressId,
+        });
+        setPendingVerification(true);
+      } else {
+        setError("Email sign-in is not available for this account.");
+      }
     } catch (err: any) {
-      setError(err.errors?.[0]?.message || "Failed to send magic link");
+      const msg = err.errors?.[0]?.message || "Failed to sign in";
+      if (msg.includes("Couldn't find your account")) {
+        setError("No account found with this email. Please sign up first.");
+      } else {
+        setError(msg);
+      }
     } finally {
       setLoading(false);
     }
   }, [email, signIn, isLoaded]);
+
+  const handleVerifyCode = useCallback(async () => {
+    if (!code.trim()) {
+      setError("Please enter the verification code");
+      return;
+    }
+    if (!signIn || !isLoaded) return;
+
+    setLoading(true);
+    setError("");
+
+    try {
+      const result = await signIn.attemptFirstFactor({
+        strategy: "email_code",
+        code,
+      });
+
+      if (result.status === "complete" && setActive) {
+        await setActive({ session: result.createdSessionId });
+        router.replace("/(tabs)/home" as any);
+      }
+    } catch (err: any) {
+      setError(err.errors?.[0]?.message || "Invalid code. Please try again.");
+    } finally {
+      setLoading(false);
+    }
+  }, [code, signIn, isLoaded, setActive, router]);
 
   const handleOAuthSignIn = useCallback(
     async (strategy: "oauth_google" | "oauth_apple") => {
@@ -81,7 +124,7 @@ export default function SignInScreen() {
           const { createdSessionId, setActive: oauthSetActive } = await oauthFlow.startOAuthFlow();
           if (createdSessionId && oauthSetActive) {
             await oauthSetActive({ session: createdSessionId });
-            router.replace("/(tabs)/home");
+            router.replace("/(tabs)/home" as any);
           }
         }
       } catch (err: any) {
@@ -93,27 +136,64 @@ export default function SignInScreen() {
     [isLoaded, router]
   );
 
-  if (magicLinkSent) {
+  if (pendingVerification) {
     return (
       <SafeAreaView style={styles.container}>
         <GradientBackground />
-        <View style={styles.content}>
-          <View style={styles.sentCard}>
-            <Mail size={48} color={Colors.accent} strokeWidth={1.5} />
-            <Text style={styles.sentTitle}>Check your email</Text>
-            <Text style={styles.sentDescription}>
-              We sent a magic link to{"\n"}
-              <Text style={styles.sentEmail}>{email}</Text>
-            </Text>
-            <Text style={styles.sentHint}>Tap the link in your email to sign in</Text>
-            <TouchableOpacity
-              style={styles.secondaryButton}
-              onPress={() => setMagicLinkSent(false)}
-            >
-              <Text style={styles.secondaryButtonText}>Use a different email</Text>
-            </TouchableOpacity>
+        <KeyboardAvoidingView
+          style={styles.keyboardView}
+          behavior={Platform.OS === "ios" ? "padding" : "height"}
+        >
+          <View style={styles.content}>
+            <View style={styles.sentCard}>
+              <KeyRound size={48} color={Colors.accent} strokeWidth={1.5} />
+              <Text style={styles.sentTitle}>Enter verification code</Text>
+              <Text style={styles.sentDescription}>
+                We sent a code to{"\n"}
+                <Text style={styles.sentEmail}>{email}</Text>
+              </Text>
+              <View style={styles.codeInputContainer}>
+                <TextInput
+                  style={styles.codeInput}
+                  placeholder="Enter 6-digit code"
+                  placeholderTextColor={Colors.text.tertiary}
+                  value={code}
+                  onChangeText={setCode}
+                  keyboardType="number-pad"
+                  maxLength={6}
+                  autoFocus
+                  textAlign="center"
+                />
+              </View>
+              {error ? <Text style={styles.errorText}>{error}</Text> : null}
+              <TouchableOpacity
+                style={[styles.primaryButton, loading && styles.primaryButtonDisabled]}
+                onPress={handleVerifyCode}
+                disabled={loading}
+                activeOpacity={0.8}
+              >
+                {loading ? (
+                  <ActivityIndicator color="#FFFFFF" />
+                ) : (
+                  <>
+                    <Text style={styles.primaryButtonText}>Verify</Text>
+                    <ArrowRight size={20} color="#FFFFFF" strokeWidth={2} />
+                  </>
+                )}
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={styles.secondaryButton}
+                onPress={() => {
+                  setPendingVerification(false);
+                  setCode("");
+                  setError("");
+                }}
+              >
+                <Text style={styles.secondaryButtonText}>Use a different email</Text>
+              </TouchableOpacity>
+            </View>
           </View>
-        </View>
+        </KeyboardAvoidingView>
       </SafeAreaView>
     );
   }
@@ -193,7 +273,7 @@ export default function SignInScreen() {
                 <ActivityIndicator color="#FFFFFF" />
               ) : (
                 <>
-                  <Text style={styles.primaryButtonText}>Send Magic Link</Text>
+                  <Text style={styles.primaryButtonText}>Send Code</Text>
                   <ArrowRight size={20} color="#FFFFFF" strokeWidth={2} />
                 </>
               )}
@@ -202,7 +282,7 @@ export default function SignInScreen() {
 
           <View style={styles.footer}>
             <Text style={styles.footerText}>Don't have an account?</Text>
-            <TouchableOpacity onPress={() => router.push("/(auth)/sign-up")}>
+            <TouchableOpacity onPress={() => router.push("/(auth)/sign-up" as any)}>
               <Text style={styles.footerLink}>Sign up</Text>
             </TouchableOpacity>
           </View>
@@ -306,6 +386,20 @@ const styles = StyleSheet.create({
     color: Colors.text.primary,
     fontSize: 16,
     paddingVertical: 14,
+  },
+  codeInputContainer: {
+    width: "100%",
+  },
+  codeInput: {
+    backgroundColor: Colors.cardSoft,
+    borderRadius: borderRadius.lg,
+    paddingVertical: 16,
+    paddingHorizontal: spacing.lg,
+    color: Colors.text.primary,
+    fontSize: 24,
+    letterSpacing: 8,
+    borderWidth: 1,
+    borderColor: Colors.border.light,
   },
   errorText: {
     ...typography.footnote,
