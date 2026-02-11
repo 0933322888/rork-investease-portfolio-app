@@ -1,7 +1,7 @@
 import React from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert, Image } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Bell, Info, Mail, Shield, ChevronRight, Crown, Link, RefreshCw, Building2, Briefcase, Lock, Sparkles, Trash2, LogOut, User } from 'lucide-react-native';
+import { Bell, Info, Mail, Shield, ChevronRight, Crown, Link, RefreshCw, Building2, Briefcase, Lock, Sparkles, Trash2, LogOut, User, Bitcoin } from 'lucide-react-native';
 import { useRouter } from 'expo-router';
 import Colors from '@/constants/colors';
 import GradientBackground from '@/components/GradientBackground';
@@ -135,6 +135,14 @@ export default function SettingsScreen() {
     router.push('/connect-snaptrade');
   };
 
+  const handleConnectCrypto = () => {
+    if (!isPremium) {
+      router.push('/premium');
+      return;
+    }
+    router.push('/connect-coinbase');
+  };
+
   const handleRefreshBalances = async () => {
     setIsRefreshing(true);
     try {
@@ -264,6 +272,14 @@ export default function SettingsScreen() {
               title="Connect Brokerage (SnapTrade)"
               subtitle="Alpaca, Webull, Trading 212 & more"
               onPress={handleConnectBrokerage}
+              locked={!isPremium}
+            />
+            <View style={styles.separator} />
+            <SettingItem
+              icon={<Bitcoin size={22} color={!isPremium ? Colors.text.tertiary : '#F5B14C'} strokeWidth={2} />}
+              title="Connect Crypto (Coinbase)"
+              subtitle="Track your crypto portfolio balances"
+              onPress={handleConnectCrypto}
               locked={!isPremium}
             />
             {plaidAccounts.length > 0 && isPremium && (
