@@ -139,7 +139,7 @@ export default function PortfolioScreen() {
   const router = useRouter();
   const { assetsByType, deleteAsset, totalValue, totalGain, totalGainPercent, assets, lastPriceRefresh } = usePortfolio();
 
-  const groupsWithAssets = ASSET_TYPES.filter((type) => assetsByType[type.id].length > 0);
+  const groupsWithAssets = ASSET_TYPES.filter((type) => assetsByType[type.id]?.length > 0);
   const isPositive = totalGain >= 0;
 
   const handleEditAsset = (asset: Asset) => {
