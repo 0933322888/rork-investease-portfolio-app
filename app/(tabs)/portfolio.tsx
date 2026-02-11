@@ -120,16 +120,17 @@ function AssetItem({ asset, onEdit, onDelete, quote }: AssetItemProps) {
                 ${quote.price.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
               </Text>
             )}
+            {isCash && asset.interestRate !== undefined && asset.interestRate > 0 && (
+              <Text style={styles.assetMarketPrice}>
+                {asset.interestRate.toFixed(2)}% APY
+              </Text>
+            )}
           </View>
         </View>
       </View>
       <View style={styles.assetMiddle}>
-        {isCash && asset.interestRate !== undefined && asset.interestRate > 0 ? (
-          <View style={[styles.dayChangePill, styles.dayChangePillPositive]}>
-            <Text style={[styles.dayChangeText, styles.positive]}>
-              {asset.interestRate.toFixed(2)}% APY
-            </Text>
-          </View>
+        {isCash ? (
+          null
         ) : hasMarketData ? (
           <View style={[styles.dayChangePill, dayChangePositive ? styles.dayChangePillPositive : styles.dayChangePillNegative]}>
             <Text style={[styles.dayChangeText, dayChangePositive ? styles.positive : styles.negative]}>
