@@ -99,9 +99,13 @@ export default function SignInScreen() {
         code,
       });
 
-      if (result.status === "complete" && setActive) {
-        await setActive({ session: result.createdSessionId });
-        router.replace("/(tabs)/home" as any);
+      if (result.status === "complete") {
+        if (setActive) {
+          await setActive({ session: result.createdSessionId });
+        }
+        setTimeout(() => {
+          router.replace("/(tabs)/home" as any);
+        }, 300);
       }
     } catch (err: any) {
       setError(err.errors?.[0]?.message || "Invalid code. Please try again.");

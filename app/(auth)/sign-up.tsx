@@ -83,9 +83,15 @@ export default function SignUpScreen() {
         code,
       });
 
-      if (result.status === "complete" && setActive) {
-        await setActive({ session: result.createdSessionId });
-        router.replace("/(tabs)/home" as any);
+      if (result.status === "complete") {
+        if (setActive) {
+          await setActive({ session: result.createdSessionId });
+        }
+        setTimeout(() => {
+          router.replace("/onboarding" as any);
+        }, 300);
+      } else if (result.status === "missing_requirements") {
+        setError("Additional verification required. Please try again.");
       }
     } catch (err: any) {
       setError(err.errors?.[0]?.message || "Invalid code. Please try again.");
