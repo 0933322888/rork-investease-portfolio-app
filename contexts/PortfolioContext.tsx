@@ -132,6 +132,7 @@ export const [PortfolioProvider, usePortfolio] = createContextHook(() => {
           currentPrice: 1.00,
           currency: 'USD',
           addedAt: Date.now() - 86400000 * 5,
+          interestRate: 4.50,
         },
         {
           id: 'mock-10',

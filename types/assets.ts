@@ -16,6 +16,7 @@ export interface Asset {
   monthlyIncome?: number;
   dueDate?: string;
   estimatedValue?: number;
+  interestRate?: number;
   plaidAccountId?: string;
   plaidItemId?: string;
   isPlaidConnected?: boolean;

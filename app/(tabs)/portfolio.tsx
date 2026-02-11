@@ -85,8 +85,9 @@ interface AssetItemProps {
 const MARKET_ASSET_TYPES = ['stocks', 'crypto'];
 
 function AssetItem({ asset, onEdit, onDelete, quote }: AssetItemProps) {
-  const value = asset.quantity * asset.currentPrice;
-  const cost = asset.quantity * asset.purchasePrice;
+  const isCash = asset.type === 'cash';
+  const value = isCash ? asset.quantity : asset.quantity * asset.currentPrice;
+  const cost = isCash ? asset.quantity : asset.quantity * asset.purchasePrice;
   const gain = value - cost;
   const gainPercent = cost > 0 ? (gain / cost) * 100 : 0;
   const isPositive = gain >= 0;
@@ -113,7 +114,7 @@ function AssetItem({ asset, onEdit, onDelete, quote }: AssetItemProps) {
         <View style={styles.assetInfo}>
           <Text style={styles.assetName} numberOfLines={1}>{asset.name}</Text>
           <View style={styles.assetSubRow}>
-            {asset.symbol && <Text style={styles.assetSymbol}>{asset.symbol}</Text>}
+            {asset.symbol && !isCash && <Text style={styles.assetSymbol}>{asset.symbol}</Text>}
             {hasMarketData && (
               <Text style={styles.assetMarketPrice}>
                 ${quote.price.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
@@ -123,7 +124,13 @@ function AssetItem({ asset, onEdit, onDelete, quote }: AssetItemProps) {
         </View>
       </View>
       <View style={styles.assetMiddle}>
-        {hasMarketData ? (
+        {isCash && asset.interestRate !== undefined && asset.interestRate > 0 ? (
+          <View style={[styles.dayChangePill, styles.dayChangePillPositive]}>
+            <Text style={[styles.dayChangeText, styles.positive]}>
+              {asset.interestRate.toFixed(2)}% APY
+            </Text>
+          </View>
+        ) : hasMarketData ? (
           <View style={[styles.dayChangePill, dayChangePositive ? styles.dayChangePillPositive : styles.dayChangePillNegative]}>
             <Text style={[styles.dayChangeText, dayChangePositive ? styles.positive : styles.negative]}>
               {dayChangePositive ? '+' : ''}{quote.changePercent.toFixed(2)}%
@@ -137,9 +144,11 @@ function AssetItem({ asset, onEdit, onDelete, quote }: AssetItemProps) {
         <Text style={styles.assetValue}>
           ${value.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
         </Text>
-        <Text style={[styles.assetGain, isPositive ? styles.positive : styles.negative]}>
-          {isPositive ? '+' : ''}{gainPercent.toFixed(2)}%
-        </Text>
+        {!isCash && (
+          <Text style={[styles.assetGain, isPositive ? styles.positive : styles.negative]}>
+            {isPositive ? '+' : ''}{gainPercent.toFixed(2)}%
+          </Text>
+        )}
       </View>
     </TouchableOpacity>
   );

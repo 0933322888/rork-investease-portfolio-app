@@ -41,6 +41,7 @@ export default function AddAssetScreen() {
   const [dueDate, setDueDate] = useState('');
   const [estimatedValue, setEstimatedValue] = useState('');
   const [marketValue, setMarketValue] = useState('');
+  const [interestRate, setInterestRate] = useState('');
 
   const handleSelectType = (type: AssetType) => {
     setSelectedType(type);
@@ -63,6 +64,7 @@ export default function AddAssetScreen() {
       monthlyIncome: undefined as number | undefined,
       dueDate: undefined as string | undefined,
       estimatedValue: undefined as number | undefined,
+      interestRate: undefined as number | undefined,
     };
 
     if (selectedType === 'stocks') {
@@ -91,11 +93,15 @@ export default function AddAssetScreen() {
       baseAsset.currentPrice = parseFloat(mockCurrentPrice.toFixed(2));
       baseAsset.monthlyRent = parseFloat(monthlyRent);
     } else if (selectedType === 'cash') {
-      if (!symbol.trim() || !purchasePrice.trim()) return;
+      if (!symbol.trim() || !quantity.trim()) return;
+      const amount = parseFloat(quantity);
       baseAsset.name = symbol;
-      baseAsset.quantity = 1;
-      baseAsset.purchasePrice = parseFloat(purchasePrice);
-      baseAsset.currentPrice = parseFloat(purchasePrice);
+      baseAsset.quantity = amount;
+      baseAsset.purchasePrice = 1;
+      baseAsset.currentPrice = 1;
+      if (interestRate.trim()) {
+        baseAsset.interestRate = parseFloat(interestRate);
+      }
     } else if (selectedType === 'commodities') {
       if (!symbol.trim() || !estimatedValue.trim()) return;
       baseAsset.name = symbol;
@@ -133,7 +139,7 @@ export default function AddAssetScreen() {
       return purchasePrice.trim() !== '' && !isNaN(parseFloat(purchasePrice)) &&
              monthlyRent.trim() !== '' && !isNaN(parseFloat(monthlyRent));
     } else if (selectedType === 'cash') {
-      return purchasePrice.trim() !== '' && !isNaN(parseFloat(purchasePrice));
+      return quantity.trim() !== '' && !isNaN(parseFloat(quantity));
     } else if (selectedType === 'commodities') {
       return estimatedValue.trim() !== '' && !isNaN(parseFloat(estimatedValue));
     } else if (selectedType === 'fixed-income') {
@@ -377,12 +383,24 @@ export default function AddAssetScreen() {
                     />
                   </View>
                   <View style={styles.formGroup}>
-                    <Text style={styles.formLabel}>Balance (USD)</Text>
+                    <Text style={styles.formLabel}>Amount (USD)</Text>
                     <TextInput
                       style={styles.input}
-                      value={purchasePrice}
-                      onChangeText={setPurchasePrice}
+                      value={quantity}
+                      onChangeText={setQuantity}
                       placeholder="10000.00"
+                      placeholderTextColor={Colors.text.tertiary}
+                      keyboardType="decimal-pad"
+                      returnKeyType="next"
+                    />
+                  </View>
+                  <View style={styles.formGroup}>
+                    <Text style={styles.formLabel}>Interest Rate (%)</Text>
+                    <TextInput
+                      style={styles.input}
+                      value={interestRate}
+                      onChangeText={setInterestRate}
+                      placeholder="4.50"
                       placeholderTextColor={Colors.text.tertiary}
                       keyboardType="decimal-pad"
                       returnKeyType="done"
