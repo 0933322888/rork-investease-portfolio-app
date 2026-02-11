@@ -203,7 +203,7 @@ function InsightCard({ icon: Icon, text, color }: { icon: any; text: string; col
 }
 
 export default function HomeScreen() {
-  const { totalValue, totalGain, totalGainPercent, assetAllocation, assets } = usePortfolio();
+  const { totalValue, totalGain, totalGainPercent, assetAllocation, assets, marketQuotes } = usePortfolio();
 
   const mockHistoricalData = useMemo(() => {
     if (assets.length === 0) return [];
@@ -224,6 +224,31 @@ export default function HomeScreen() {
       color: ALLOC_COLORS[type.id] || Colors.other,
     })).filter((item) => item.value > 0);
   }, [assetAllocation]);
+
+  const marketTickers = useMemo(() => {
+    const seen = new Set<string>();
+    return assets
+      .filter(a => a.symbol && (a.type === 'stocks' || a.type === 'crypto'))
+      .filter(a => {
+        const sym = a.symbol!.toUpperCase();
+        if (seen.has(sym)) return false;
+        seen.add(sym);
+        return true;
+      })
+      .map(a => {
+        const sym = a.symbol!.toUpperCase();
+        const quote = marketQuotes[sym];
+        return {
+          symbol: sym,
+          name: a.name,
+          type: a.type,
+          price: quote?.price ?? a.currentPrice,
+          changePercent: quote?.changePercent ?? 0,
+          dayChange: quote?.dayChange ?? 0,
+        };
+      })
+      .slice(0, 8);
+  }, [assets, marketQuotes]);
 
   const health = useMemo(() => getHealthScore(allocationData), [allocationData]);
   const isPositive = totalGain >= 0;
@@ -263,8 +288,42 @@ export default function HomeScreen() {
           </TouchableOpacity>
         </AnimatedCard>
 
+        {marketTickers.length > 0 && (
+          <AnimatedCard delay={140}>
+            <View style={styles.card}>
+              <View style={styles.marketHeader}>
+                <Text style={styles.cardTitle}>Market Prices</Text>
+                <Text style={styles.marketLive}>LIVE</Text>
+              </View>
+              <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.tickerScroll} contentContainerStyle={styles.tickerScrollContent}>
+                {marketTickers.map((ticker) => {
+                  const isUp = ticker.dayChange >= 0;
+                  return (
+                    <View key={ticker.symbol} style={styles.tickerCard}>
+                      <View style={styles.tickerTop}>
+                        <Text style={styles.tickerSymbol}>{ticker.symbol}</Text>
+                        <View style={[styles.tickerChangePill, isUp ? styles.tickerChangePillPositive : styles.tickerChangePillNegative]}>
+                          <Text style={[styles.tickerChangeText, { color: isUp ? Colors.success : Colors.error }]}>
+                            {isUp ? '+' : ''}{ticker.changePercent.toFixed(2)}%
+                          </Text>
+                        </View>
+                      </View>
+                      <Text style={styles.tickerPrice}>
+                        ${ticker.price.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                      </Text>
+                      <Text style={[styles.tickerDayChange, { color: isUp ? Colors.success : Colors.error }]}>
+                        {isUp ? '+' : ''}${Math.abs(ticker.dayChange).toFixed(2)}
+                      </Text>
+                    </View>
+                  );
+                })}
+              </ScrollView>
+            </View>
+          </AnimatedCard>
+        )}
+
         {allocationData.length > 0 && (
-          <AnimatedCard delay={160} style={styles.card}>
+          <AnimatedCard delay={220} style={styles.card}>
             <Text style={styles.cardTitle}>Allocation</Text>
             <View style={styles.allocationContent}>
               <View style={styles.allocationLegend}>
@@ -433,6 +492,75 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: Colors.text.primary,
     marginBottom: spacing.md,
+  },
+  marketHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: spacing.md,
+  },
+  marketLive: {
+    fontSize: 10,
+    fontWeight: '700',
+    color: Colors.success,
+    letterSpacing: 1,
+    backgroundColor: Colors.success + '18',
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 6,
+    overflow: 'hidden',
+  },
+  tickerScroll: {
+    marginHorizontal: -spacing.lg,
+  },
+  tickerScrollContent: {
+    paddingHorizontal: spacing.lg,
+    gap: spacing.sm,
+  },
+  tickerCard: {
+    backgroundColor: Colors.cardSoft,
+    borderRadius: borderRadius.md,
+    padding: spacing.md,
+    minWidth: 120,
+    gap: 4,
+  },
+  tickerTop: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    gap: spacing.sm,
+    marginBottom: 2,
+  },
+  tickerSymbol: {
+    ...typography.callout,
+    color: Colors.text.primary,
+    fontWeight: '700' as const,
+    fontSize: 13,
+  },
+  tickerChangePill: {
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 4,
+  },
+  tickerChangePillPositive: {
+    backgroundColor: Colors.success + '18',
+  },
+  tickerChangePillNegative: {
+    backgroundColor: Colors.error + '18',
+  },
+  tickerChangeText: {
+    fontSize: 10,
+    fontWeight: '700' as const,
+  },
+  tickerPrice: {
+    ...typography.callout,
+    color: Colors.text.primary,
+    fontWeight: '600' as const,
+  },
+  tickerDayChange: {
+    ...typography.caption,
+    fontWeight: '500' as const,
+    fontSize: 11,
   },
   allocationContent: {
     flexDirection: 'row',

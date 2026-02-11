@@ -136,6 +136,14 @@ Database (auto-configured by Replit):
 - 5-tab navigation (Home, Portfolio, + Add, Insights, Settings)
 
 ## Recent Changes
+- **Live Market Prices (Feb 2026)**:
+  - Market Prices card on Home tab with horizontally scrollable live tickers
+  - Per-unit market price shown on each stock/crypto asset in Portfolio tab
+  - Day change percentage pill (green/red) on each tradeable asset
+  - Market quotes stored in PortfolioContext (price, changePercent, dayChange per symbol)
+  - Profile editing screen (edit name, change avatar, delete account)
+  - tRPC endpoints: updateProfile (with auto-create), deleteAccount
+  - Settings profile card tappable to navigate to profile editor
 - **Premium Subscription Flow (Feb 2026)**:
   - Premium paywall screen (`app/premium.tsx`) with feature list, pricing, and upgrade button
   - tRPC endpoints for reading/updating subscription status from PostgreSQL

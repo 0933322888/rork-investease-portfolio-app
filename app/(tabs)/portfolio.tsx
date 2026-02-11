@@ -79,14 +79,19 @@ interface AssetItemProps {
   asset: Asset;
   onEdit: (asset: Asset) => void;
   onDelete: (asset: Asset) => void;
+  quote?: { price: number; changePercent: number; dayChange: number } | null;
 }
 
-function AssetItem({ asset, onEdit, onDelete }: AssetItemProps) {
+const MARKET_ASSET_TYPES = ['stocks', 'crypto'];
+
+function AssetItem({ asset, onEdit, onDelete, quote }: AssetItemProps) {
   const value = asset.quantity * asset.currentPrice;
   const cost = asset.quantity * asset.purchasePrice;
   const gain = value - cost;
   const gainPercent = cost > 0 ? (gain / cost) * 100 : 0;
   const isPositive = gain >= 0;
+  const hasMarketData = quote && MARKET_ASSET_TYPES.includes(asset.type) && asset.symbol;
+  const dayChangePositive = quote ? quote.dayChange >= 0 : true;
 
   const sparklineSeed = asset.id.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
 
@@ -106,12 +111,27 @@ function AssetItem({ asset, onEdit, onDelete }: AssetItemProps) {
     <TouchableOpacity style={styles.assetItem} activeOpacity={0.7} onPress={handlePress}>
       <View style={styles.assetLeft}>
         <View style={styles.assetInfo}>
-          <Text style={styles.assetName}>{asset.name}</Text>
-          {asset.symbol && <Text style={styles.assetSymbol}>{asset.symbol}</Text>}
+          <Text style={styles.assetName} numberOfLines={1}>{asset.name}</Text>
+          <View style={styles.assetSubRow}>
+            {asset.symbol && <Text style={styles.assetSymbol}>{asset.symbol}</Text>}
+            {hasMarketData && (
+              <Text style={styles.assetMarketPrice}>
+                ${quote.price.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+              </Text>
+            )}
+          </View>
         </View>
       </View>
       <View style={styles.assetMiddle}>
-        <MiniSparkline isPositive={isPositive} seed={sparklineSeed} />
+        {hasMarketData ? (
+          <View style={[styles.dayChangePill, dayChangePositive ? styles.dayChangePillPositive : styles.dayChangePillNegative]}>
+            <Text style={[styles.dayChangeText, dayChangePositive ? styles.positive : styles.negative]}>
+              {dayChangePositive ? '+' : ''}{quote.changePercent.toFixed(2)}%
+            </Text>
+          </View>
+        ) : (
+          <MiniSparkline isPositive={isPositive} seed={sparklineSeed} />
+        )}
       </View>
       <View style={styles.assetRight}>
         <Text style={styles.assetValue}>
@@ -137,7 +157,7 @@ function formatTimeAgo(timestamp: number | null): string {
 
 export default function PortfolioScreen() {
   const router = useRouter();
-  const { assetsByType, deleteAsset, totalValue, totalGain, totalGainPercent, assets, lastPriceRefresh } = usePortfolio();
+  const { assetsByType, deleteAsset, totalValue, totalGain, totalGainPercent, assets, lastPriceRefresh, marketQuotes } = usePortfolio();
 
   const groupsWithAssets = ASSET_TYPES.filter((type) => assetsByType[type.id]?.length > 0);
   const isPositive = totalGain >= 0;
@@ -238,6 +258,7 @@ export default function PortfolioScreen() {
                         asset={asset} 
                         onEdit={handleEditAsset}
                         onDelete={handleDeleteAsset}
+                        quote={asset.symbol ? marketQuotes[asset.symbol.toUpperCase()] || null : null}
                       />
                     ))}
                   </View>
@@ -380,6 +401,34 @@ const styles = StyleSheet.create({
   assetSymbol: {
     ...typography.footnote,
     color: Colors.text.secondary,
+  },
+  assetSubRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+  },
+  assetMarketPrice: {
+    ...typography.footnote,
+    color: Colors.text.tertiary,
+    fontWeight: '500' as const,
+  },
+  dayChangePill: {
+    paddingHorizontal: spacing.sm,
+    paddingVertical: 3,
+    borderRadius: borderRadius.sm,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  dayChangePillPositive: {
+    backgroundColor: Colors.success + '18',
+  },
+  dayChangePillNegative: {
+    backgroundColor: Colors.error + '18',
+  },
+  dayChangeText: {
+    ...typography.caption,
+    fontWeight: '700' as const,
+    fontSize: 11,
   },
   assetRight: {
     alignItems: 'flex-end',

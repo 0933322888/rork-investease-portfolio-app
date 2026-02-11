@@ -13,12 +13,19 @@ const COINBASE_CREDENTIALS_KEY = 'coinbase_credentials';
 
 const MARKET_PRICE_TYPES: AssetType[] = ['stocks', 'crypto'];
 
+export interface MarketQuoteData {
+  price: number;
+  changePercent: number;
+  dayChange: number;
+}
+
 export const [PortfolioProvider, usePortfolio] = createContextHook(() => {
   const queryClient = useQueryClient();
   const [assets, setAssets] = useState<Asset[]>([]);
   const [plaidAccounts, setPlaidAccounts] = useState<PlaidAccount[]>([]);
   const [isRefreshingPrices, setIsRefreshingPrices] = useState(false);
   const [lastPriceRefresh, setLastPriceRefresh] = useState<number | null>(null);
+  const [marketQuotes, setMarketQuotes] = useState<Record<string, MarketQuoteData>>({});
 
   const assetsQuery = useQuery({
     queryKey: ['assets'],
@@ -664,10 +671,22 @@ export const [PortfolioProvider, usePortfolio] = createContextHook(() => {
       }
 
       const priceMap = new Map<string, number>();
+      const quotesMap: Record<string, MarketQuoteData> = {};
       for (const item of result.data) {
         priceMap.set(item.originalSymbol.toUpperCase(), item.price);
         priceMap.set(item.symbol.toUpperCase(), item.price);
+        quotesMap[item.originalSymbol.toUpperCase()] = {
+          price: item.price,
+          changePercent: item.changePercent ?? 0,
+          dayChange: item.dayChange ?? 0,
+        };
+        quotesMap[item.symbol.toUpperCase()] = {
+          price: item.price,
+          changePercent: item.changePercent ?? 0,
+          dayChange: item.dayChange ?? 0,
+        };
       }
+      setMarketQuotes(prev => ({ ...prev, ...quotesMap }));
 
       let hasChanges = false;
       const updatedAssets = assets.map((asset) => {
@@ -736,5 +755,6 @@ export const [PortfolioProvider, usePortfolio] = createContextHook(() => {
     refreshMarketPrices,
     isRefreshingPrices,
     lastPriceRefresh,
+    marketQuotes,
   };
 });
