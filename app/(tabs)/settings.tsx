@@ -59,7 +59,7 @@ function SettingItem({ icon, title, subtitle, onPress, badge, locked, destructiv
   );
 }
 
-function UserProfileCard({ isPremium }: { isPremium: boolean }) {
+function UserProfileCard({ isPremium, onPress }: { isPremium: boolean; onPress?: () => void }) {
   const userHook = useUser?.();
   const user = userHook?.user;
   const isLoaded = userHook?.isLoaded ?? false;
@@ -83,7 +83,7 @@ function UserProfileCard({ isPremium }: { isPremium: boolean }) {
   const avatarUrl = user.imageUrl;
 
   return (
-    <View style={styles.profileCard}>
+    <TouchableOpacity style={styles.profileCard} onPress={onPress} activeOpacity={0.7}>
       {avatarUrl ? (
         <Image source={{ uri: avatarUrl }} style={styles.profileAvatar} />
       ) : (
@@ -105,7 +105,8 @@ function UserProfileCard({ isPremium }: { isPremium: boolean }) {
         </View>
         {email ? <Text style={styles.profileEmail}>{email}</Text> : null}
       </View>
-    </View>
+      <ChevronRight size={20} color={Colors.text.tertiary} />
+    </TouchableOpacity>
   );
 }
 
@@ -229,7 +230,7 @@ export default function SettingsScreen() {
 
         <View style={styles.section}>
           <View style={styles.settingGroup}>
-            <UserProfileCard isPremium={isPremium} />
+            <UserProfileCard isPremium={isPremium} onPress={() => router.push('/profile-edit')} />
           </View>
         </View>
 

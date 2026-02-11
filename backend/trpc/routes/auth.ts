@@ -137,4 +137,64 @@ export const authRouter = createTRPCRouter({
 
       return { status: result[0].subscriptionStatus };
     }),
+
+  updateProfile: protectedProcedure
+    .input(z.object({
+      firstName: z.string().optional(),
+      lastName: z.string().optional(),
+      avatarUrl: z.string().optional(),
+    }))
+    .mutation(async ({ ctx, input }) => {
+      const result = await db
+        .update(schema.users)
+        .set({
+          ...(input.firstName !== undefined && { firstName: input.firstName }),
+          ...(input.lastName !== undefined && { lastName: input.lastName }),
+          ...(input.avatarUrl !== undefined && { avatarUrl: input.avatarUrl }),
+          updatedAt: new Date(),
+        })
+        .where(eq(schema.users.clerkUserId, ctx.clerkUserId))
+        .returning();
+
+      if (result.length === 0) {
+        const [newUser] = await db
+          .insert(schema.users)
+          .values({
+            clerkUserId: ctx.clerkUserId,
+            firstName: input.firstName || null,
+            lastName: input.lastName || null,
+            avatarUrl: input.avatarUrl || null,
+          })
+          .returning();
+
+        await db.insert(schema.portfolios).values({
+          userId: newUser.id,
+        });
+
+        return { user: newUser };
+      }
+
+      return { user: result[0] };
+    }),
+
+  deleteAccount: protectedProcedure
+    .mutation(async ({ ctx }) => {
+      const users = await db
+        .select()
+        .from(schema.users)
+        .where(eq(schema.users.clerkUserId, ctx.clerkUserId))
+        .limit(1);
+
+      if (users.length > 0) {
+        await db
+          .delete(schema.portfolios)
+          .where(eq(schema.portfolios.userId, users[0].id));
+
+        await db
+          .delete(schema.users)
+          .where(eq(schema.users.id, users[0].id));
+      }
+
+      return { success: true };
+    }),
 });

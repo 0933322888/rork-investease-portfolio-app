@@ -90,6 +90,7 @@ function RootLayoutNav() {
         <Stack.Screen name="connect-snaptrade" options={{ presentation: "modal", headerShown: false }} />
         <Stack.Screen name="connect-coinbase" options={{ presentation: "modal", headerShown: false }} />
         <Stack.Screen name="premium" options={{ presentation: "modal", headerShown: false }} />
+        <Stack.Screen name="profile-edit" options={{ presentation: "modal", headerShown: false }} />
       </Stack>
       {isLocked && <AppLockOverlay onUnlock={authenticate} />}
     </>
