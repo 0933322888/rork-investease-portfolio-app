@@ -4,7 +4,7 @@ import {
   Landmark,
 } from 'lucide-react-native';
 import React, { useMemo, useEffect } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Dimensions, Platform } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Dimensions, Platform, Image } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Svg, { Path, Defs, LinearGradient as SvgLinearGradient, Stop, Circle as SvgCircle, Rect, Line } from 'react-native-svg';
 import Animated, { useSharedValue, useAnimatedStyle, withTiming, withDelay, Easing } from 'react-native-reanimated';
@@ -237,6 +237,11 @@ export default function HomeScreen() {
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.scrollContent}
       >
+        <View style={styles.logoHeader}>
+          <Image source={require('@/assets/images/logo.png')} style={styles.logoImage} resizeMode="contain" />
+          <Text style={styles.dateText}>{getFormattedDate()}</Text>
+        </View>
+
         <AnimatedCard delay={80}>
           <TouchableOpacity
             style={styles.heroCard}
@@ -353,8 +358,23 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   scrollContent: {
-    paddingTop: 44,
+    paddingTop: spacing.md,
     paddingBottom: 160,
+  },
+  logoHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: spacing.lg,
+    marginBottom: spacing.lg,
+  },
+  logoImage: {
+    width: 140,
+    height: 40,
+  },
+  dateText: {
+    ...typography.footnote,
+    color: Colors.text.secondary,
   },
   heroCard: {
     backgroundColor: Colors.card,

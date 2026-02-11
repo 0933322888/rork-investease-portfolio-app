@@ -1,7 +1,7 @@
 import { router } from 'expo-router';
 import { ArrowRight, TrendingUp, PieChart, Eye, Sparkles } from 'lucide-react-native';
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Dimensions } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Dimensions, Image } from 'react-native';
 import Animated, { 
   useAnimatedStyle, 
   withTiming, 
@@ -93,8 +93,7 @@ export default function OnboardingScreen() {
     <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
       <View style={styles.header}>
         <View style={styles.logoContainer}>
-          <Sparkles size={20} color={Colors.accent} />
-          <Text style={styles.logoText}>InvestEase</Text>
+          <Image source={require('@/assets/images/logo.png')} style={styles.logoImage} resizeMode="contain" />
         </View>
         {currentIndex < screens.length - 1 && (
           <TouchableOpacity onPress={handleSkip} style={styles.skipButton}>
@@ -168,10 +167,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: spacing.xs,
   },
-  logoText: {
-    ...typography.headline,
-    color: Colors.text.primary,
-    fontWeight: '700',
+  logoImage: {
+    width: 120,
+    height: 36,
   },
   skipButton: {
     paddingVertical: spacing.sm,
