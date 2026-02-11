@@ -1,7 +1,7 @@
-# InvestEase Portfolio App
+# Assetra Portfolio App
 
 ## Overview
-A cross-platform React Native investment portfolio tracking app built with Expo. It allows users to track stocks, crypto, real estate, and other investments in one place.
+A cross-platform React Native investment portfolio tracking app built with Expo. It allows users to track stocks, crypto, real estate, and other investments in one place. Features user authentication via Replit Auth (OIDC) and premium subscription gating.
 
 ## Project Architecture
 
@@ -137,6 +137,14 @@ The app uses Plaid and SnapTrade for financial account linking. Required secrets
   - "Connect Coinbase" card in Add Asset > Crypto flow with divider for manual entry
   - Deduplication logic to prevent duplicate assets on reconnect
   - Stored credentials in AsyncStorage (consistent with existing Plaid/SnapTrade pattern)
+- **User Authentication (Feb 2026)**:
+  - Replit Auth (OIDC) integration for sign-in/sign-out
+  - PostgreSQL database with Drizzle ORM for users and sessions
+  - Landing/login page with feature showcase for unauthenticated users
+  - Auth gate in root layout — app requires login to access
+  - User profile card and Sign Out button in Settings
+  - Session-based auth with httpOnly cookies
+  - Auth routes: /api/login, /api/logout, /api/auth/user, /api/auth/callback
 - Configured for Replit deployment
 - Using static export for web instead of dev server (file watcher limitations)
 - Combined backend API with static file serving on port 5000

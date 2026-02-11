@@ -5,10 +5,14 @@ import { serveStatic } from "hono/bun";
 import { trpcServer } from "@hono/trpc-server";
 import { appRouter } from "./backend/trpc/app-router";
 import { createContext } from "./backend/trpc/create-context";
+import { registerAuthRoutes, authMiddleware } from "./backend/auth";
 
 const app = new Hono();
 
 app.use("*", cors());
+app.use("*", authMiddleware);
+
+registerAuthRoutes(app);
 
 app.use(
   "/api/trpc/*",
