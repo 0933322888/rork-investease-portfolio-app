@@ -1,0 +1,245 @@
+You are implementing production-grade authentication for a mobile fintech app called Assetra.
+
+Tech stack:
+
+Mobile
+• React Native (Expo + Expo Router)
+• TypeScript
+
+Backend
+• Node.js + Express
+• TypeScript
+• MongoDB (Mongoose)
+
+Auth provider
+• Clerk (Expo SDK)
+
+Goal: complete auth flow mobile → backend → MongoDB.
+
+Part 1 — Mobile: Install Clerk + security
+
+Install packages:
+
+npx expo install expo-secure-store expo-local-authentication
+npm install @clerk/clerk-expo axios
+
+
+Create provider:
+
+src/providers/ClerkProvider.tsx
+
+Requirements:
+
+Configure ClerkProvider
+
+Persist session with SecureStore token cache
+
+Read publishable key from env:
+EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY
+
+Part 2 — Auth screens (Expo Router)
+
+Create routes:
+
+/app/(auth)/sign-in.tsx
+/app/(auth)/sign-up.tsx
+/app/(app)/_layout.tsx
+
+
+Use Clerk hooks:
+
+useSignIn
+
+useSignUp
+
+useAuth
+
+SignedIn / SignedOut
+
+Enable login methods:
+• Sign in with Apple
+• Sign in with Google
+• Email magic link
+• Passkeys enabled
+
+After login → navigate to /home.
+
+Dark fintech UI, large buttons, no password forms.
+
+Part 3 — Route protection
+
+Create:
+
+src/components/RequireAuth.tsx
+
+Behavior:
+
+If signed out → redirect /sign-in
+
+If signed in → render children
+
+Protect entire (app) route group.
+
+Part 4 — Biometric app lock
+
+Implement banking-style app lock.
+
+Create hook:
+
+src/hooks/useAppLock.ts
+
+Use Expo LocalAuthentication.
+
+Rules:
+• When app resumes → require FaceID/Fingerprint
+• Lock after 5 minutes in background
+• Show full-screen unlock modal
+
+Part 5 — API client with Clerk JWT
+
+Create:
+
+src/services/apiClient.ts
+
+Use Axios.
+
+Every request must attach Clerk token:
+
+Authorization: Bearer <jwt>
+
+
+Token retrieved via:
+
+const { getToken } = useAuth()
+
+Part 6 — Backend setup (Node + MongoDB)
+
+Install backend deps:
+
+npm install express cors dotenv mongoose @clerk/backend express-rate-limit
+
+
+Create project structure:
+
+/src
+  /middleware
+  /models
+  /routes
+  server.ts
+
+
+Connect to MongoDB via Mongoose.
+
+Env variable:
+
+MONGODB_URI=
+CLERK_SECRET_KEY=
+
+Part 7 — Clerk JWT middleware
+
+Create:
+
+src/middleware/auth.ts
+
+Responsibilities:
+
+Read Authorization header
+
+Verify Clerk JWT using @clerk/backend
+
+Extract clerk user id
+
+Attach to request:
+
+req.user = { clerkUserId }
+
+
+Reject unauthorized requests.
+
+Part 8 — MongoDB models (Mongoose)
+
+Create models:
+
+User model
+
+src/models/User.ts
+
+Schema:
+
+{
+  clerkUserId: { type: String, unique: true }
+  email: String
+  subscriptionStatus: { type: String, default: "free" }
+  createdAt: { type: Date, default: Date.now }
+}
+
+Portfolio model
+
+src/models/Portfolio.ts
+
+{
+  userId: String
+  baseCurrency: { default: "USD" }
+  totalValue: Number
+  lastCalculatedAt: Date
+}
+
+Part 9 — User bootstrap endpoint
+
+Create route:
+
+POST /auth/bootstrap
+
+Protected by auth middleware.
+
+Logic:
+
+Get clerkUserId from token
+
+Check if user exists in MongoDB
+
+If not:
+
+create User document
+
+create empty Portfolio document
+
+Return user profile
+
+This endpoint runs after first login.
+
+Part 10 — Connect RevenueCat user ID
+
+After login success:
+
+Use Clerk user.id as RevenueCat App User ID.
+
+This will later allow subscription gating.
+
+Part 11 — Security requirements
+
+Must implement:
+
+• No API keys inside mobile app
+• All integrations happen via backend
+• Rate-limit API (auth + integrations)
+• HTTPS only
+• Never use AsyncStorage for tokens
+
+Expected result
+
+User can:
+
+Open app
+
+Sign in with Apple/Google/passkey
+
+Unlock app with biometrics
+
+Backend verifies identity via Clerk
+
+User auto-created in MongoDB
+
+Secure authenticated API ready
+
+Implement full code and folder structure.
