@@ -1,7 +1,7 @@
 import React from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert, Image } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Bell, Info, Mail, Shield, ChevronRight, Crown, Link, RefreshCw, Building2, Briefcase, Lock, Sparkles, Trash2 } from 'lucide-react-native';
+import { Bell, Info, Mail, Shield, ChevronRight, Crown, Link, RefreshCw, Building2, Briefcase, Lock, Sparkles, Trash2, LogOut, User } from 'lucide-react-native';
 import { useRouter } from 'expo-router';
 import Colors from '@/constants/colors';
 import GradientBackground from '@/components/GradientBackground';
@@ -10,6 +10,14 @@ import { typography } from '@/constants/typography';
 import { usePortfolio } from '@/contexts/PortfolioContext';
 import { useSubscription } from '@/contexts/SubscriptionContext';
 
+let useAuth: any = null;
+let useUser: any = null;
+try {
+  const clerk = require("@clerk/clerk-expo");
+  useAuth = clerk.useAuth;
+  useUser = clerk.useUser;
+} catch {}
+
 interface SettingItemProps {
   icon: React.ReactNode;
   title: string;
@@ -17,9 +25,10 @@ interface SettingItemProps {
   onPress: () => void;
   badge?: string;
   locked?: boolean;
+  destructive?: boolean;
 }
 
-function SettingItem({ icon, title, subtitle, onPress, badge, locked }: SettingItemProps) {
+function SettingItem({ icon, title, subtitle, onPress, badge, locked, destructive }: SettingItemProps) {
   return (
     <TouchableOpacity 
       style={[styles.settingItem, locked && styles.settingItemLocked]} 
@@ -30,7 +39,7 @@ function SettingItem({ icon, title, subtitle, onPress, badge, locked }: SettingI
       <View style={styles.settingLeft}>
         <View style={[styles.settingIconContainer, locked && styles.settingIconLocked]}>{icon}</View>
         <View style={styles.settingContent}>
-          <Text style={[styles.settingTitle, locked && styles.settingTitleLocked]}>{title}</Text>
+          <Text style={[styles.settingTitle, locked && styles.settingTitleLocked, destructive && styles.settingTitleDestructive]}>{title}</Text>
           {subtitle && <Text style={styles.settingSubtitle}>{subtitle}</Text>}
         </View>
       </View>
@@ -50,11 +59,57 @@ function SettingItem({ icon, title, subtitle, onPress, badge, locked }: SettingI
   );
 }
 
+function UserProfileCard() {
+  const userHook = useUser?.();
+  const user = userHook?.user;
+  const isLoaded = userHook?.isLoaded ?? false;
+
+  if (!useUser || !isLoaded || !user) {
+    return (
+      <View style={styles.profileCard}>
+        <View style={styles.profileAvatarPlaceholder}>
+          <User size={32} color={Colors.text.tertiary} strokeWidth={1.5} />
+        </View>
+        <View style={styles.profileInfo}>
+          <Text style={styles.profileName}>Guest User</Text>
+          <Text style={styles.profileEmail}>Not signed in</Text>
+        </View>
+      </View>
+    );
+  }
+
+  const displayName = [user.firstName, user.lastName].filter(Boolean).join(" ") || "User";
+  const email = user.primaryEmailAddress?.emailAddress || "";
+  const avatarUrl = user.imageUrl;
+
+  return (
+    <View style={styles.profileCard}>
+      {avatarUrl ? (
+        <Image source={{ uri: avatarUrl }} style={styles.profileAvatar} />
+      ) : (
+        <View style={styles.profileAvatarPlaceholder}>
+          <Text style={styles.profileAvatarText}>
+            {displayName.charAt(0).toUpperCase()}
+          </Text>
+        </View>
+      )}
+      <View style={styles.profileInfo}>
+        <Text style={styles.profileName}>{displayName}</Text>
+        {email ? <Text style={styles.profileEmail}>{email}</Text> : null}
+      </View>
+    </View>
+  );
+}
+
 export default function SettingsScreen() {
   const router = useRouter();
   const { plaidAccounts, refreshPlaidBalances, removeAllPlaidAccounts } = usePortfolio();
   const { isPremium } = useSubscription();
   const [isRefreshing, setIsRefreshing] = React.useState(false);
+
+  const authHook = useAuth?.();
+  const signOut = authHook?.signOut;
+  const isSignedIn = authHook?.isSignedIn ?? false;
 
   const handleConnectBank = () => {
     if (!isPremium) {
@@ -102,6 +157,30 @@ export default function SettingsScreen() {
     );
   };
 
+  const handleSignOut = () => {
+    Alert.alert(
+      'Sign Out',
+      'Are you sure you want to sign out?',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Sign Out',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              if (signOut) {
+                await signOut();
+              }
+              router.replace("/(auth)/sign-in" as any);
+            } catch (err) {
+              Alert.alert('Error', 'Failed to sign out. Please try again.');
+            }
+          },
+        },
+      ]
+    );
+  };
+
   const handleUpgrade = () => {
     Alert.alert('Premium', 'Upgrade to premium to unlock advanced insights and analytics');
   };
@@ -115,11 +194,11 @@ export default function SettingsScreen() {
   };
 
   const handleAbout = () => {
-    Alert.alert('About', 'Portfolio Tracker v1.0.0\nBuilt with clarity and care');
+    Alert.alert('About', 'Assetra v1.0.0\nBuilt with clarity and care');
   };
 
   const handleSupport = () => {
-    Alert.alert('Support', 'Need help? Contact us at support@example.com');
+    Alert.alert('Support', 'Need help? Contact us at support@assetra.app');
   };
 
   return (
@@ -130,6 +209,14 @@ export default function SettingsScreen() {
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
+        <Text style={styles.pageTitle}>Settings</Text>
+
+        <View style={styles.section}>
+          <View style={styles.settingGroup}>
+            <UserProfileCard />
+          </View>
+        </View>
+
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Subscription</Text>
           <View style={styles.settingGroup}>
@@ -234,6 +321,20 @@ export default function SettingsScreen() {
           </View>
         </View>
 
+        {isSignedIn && (
+          <View style={styles.section}>
+            <View style={styles.settingGroup}>
+              <SettingItem
+                icon={<LogOut size={22} color={Colors.error} strokeWidth={2} />}
+                title="Sign Out"
+                subtitle="Sign out of your account"
+                onPress={handleSignOut}
+                destructive
+              />
+            </View>
+          </View>
+        )}
+
         <View style={styles.footer}>
           <Text style={styles.footerText}>Made with care for clarity</Text>
           <Text style={styles.footerVersion}>Version 1.0.0</Text>
@@ -253,7 +354,52 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     padding: spacing.lg,
-    paddingTop: 60,
+    paddingTop: spacing.lg,
+  },
+  pageTitle: {
+    ...typography.title1,
+    color: Colors.text.primary,
+    marginBottom: spacing.xl,
+  },
+  profileCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: spacing.lg,
+    gap: spacing.lg,
+  },
+  profileAvatar: {
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    backgroundColor: Colors.cardSoft,
+  },
+  profileAvatarPlaceholder: {
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    backgroundColor: Colors.cardSoft,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: Colors.border.light,
+  },
+  profileAvatarText: {
+    fontSize: 22,
+    fontWeight: '700',
+    color: Colors.accent,
+  },
+  profileInfo: {
+    flex: 1,
+    gap: 4,
+  },
+  profileName: {
+    ...typography.headline,
+    color: Colors.text.primary,
+    fontSize: 18,
+  },
+  profileEmail: {
+    ...typography.callout,
+    color: Colors.text.secondary,
   },
   section: {
     marginBottom: spacing.xl,
@@ -331,6 +477,9 @@ const styles = StyleSheet.create({
   },
   settingTitleLocked: {
     color: Colors.text.tertiary,
+  },
+  settingTitleDestructive: {
+    color: Colors.error,
   },
   settingItemLocked: {
     opacity: 0.7,
