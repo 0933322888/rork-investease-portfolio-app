@@ -4,15 +4,34 @@ import { View, ActivityIndicator, StyleSheet } from 'react-native';
 import Colors from '@/constants/colors';
 import { usePortfolio } from '@/contexts/PortfolioContext';
 
+function useClerkAuth() {
+  try {
+    const { useAuth } = require("@clerk/clerk-expo");
+    const auth = useAuth();
+    return {
+      isSignedIn: auth.isSignedIn ?? false,
+      isLoaded: auth.isLoaded ?? false,
+      hasClerk: true,
+    };
+  } catch {
+    return { isSignedIn: true, isLoaded: true, hasClerk: false };
+  }
+}
+
 export default function Index() {
   const { hasCompletedOnboarding, isLoading } = usePortfolio();
+  const { isSignedIn, isLoaded, hasClerk } = useClerkAuth();
 
-  if (isLoading) {
+  if (isLoading || !isLoaded) {
     return (
       <View style={styles.container}>
         <ActivityIndicator size="large" color={Colors.accent} />
       </View>
     );
+  }
+
+  if (hasClerk && !isSignedIn) {
+    return <Redirect href="/(auth)/sign-in" />;
   }
 
   if (!hasCompletedOnboarding) {
