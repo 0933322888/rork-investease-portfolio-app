@@ -29,6 +29,9 @@ export default function EditAssetScreen() {
   const [purchasePrice, setPurchasePrice] = useState('');
   const [currentPrice, setCurrentPrice] = useState('');
   const [quantity, setQuantity] = useState('');
+  const [interestRate, setInterestRate] = useState('');
+
+  const isCash = asset?.type === 'cash';
 
   useEffect(() => {
     if (asset) {
@@ -38,6 +41,7 @@ export default function EditAssetScreen() {
       setPurchasePrice(asset.purchasePrice?.toString() || '');
       setCurrentPrice(asset.currentPrice?.toString() || '');
       setQuantity(asset.quantity?.toString() || '');
+      setInterestRate(asset.interestRate?.toString() || '');
     }
   }, [asset]);
 
@@ -59,20 +63,32 @@ export default function EditAssetScreen() {
   }
 
   const handleSubmit = () => {
-    updateAsset(asset.id, {
-      name: name.trim() || asset.name,
-      address: address.trim() || undefined,
-      symbol: symbol.trim() || undefined,
-      purchasePrice: parseFloat(purchasePrice) || asset.purchasePrice,
-      currentPrice: parseFloat(currentPrice) || asset.currentPrice,
-      quantity: parseFloat(quantity) || asset.quantity,
-    });
+    if (isCash) {
+      updateAsset(asset.id, {
+        name: name.trim() || asset.name,
+        quantity: parseFloat(quantity) || asset.quantity,
+        purchasePrice: 1,
+        currentPrice: 1,
+        interestRate: interestRate ? parseFloat(interestRate) : undefined,
+      });
+    } else {
+      updateAsset(asset.id, {
+        name: name.trim() || asset.name,
+        address: address.trim() || undefined,
+        symbol: symbol.trim() || undefined,
+        purchasePrice: parseFloat(purchasePrice) || asset.purchasePrice,
+        currentPrice: parseFloat(currentPrice) || asset.currentPrice,
+        quantity: parseFloat(quantity) || asset.quantity,
+      });
+    }
     router.back();
   };
 
-  const isFormValid = name.trim() !== '' &&
-    !isNaN(parseFloat(purchasePrice)) &&
-    (asset.type === 'real-estate' || !isNaN(parseFloat(quantity)));
+  const isFormValid = isCash
+    ? name.trim() !== '' && !isNaN(parseFloat(quantity))
+    : name.trim() !== '' &&
+      !isNaN(parseFloat(purchasePrice)) &&
+      (asset.type === 'real-estate' || !isNaN(parseFloat(quantity)));
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
@@ -139,42 +155,72 @@ export default function EditAssetScreen() {
               </View>
             )}
 
-            <View style={styles.inputGroup}>
-              <Text style={styles.label}>Purchase Price</Text>
-              <TextInput
-                style={styles.input}
-                value={purchasePrice}
-                onChangeText={setPurchasePrice}
-                placeholder="0.00"
-                placeholderTextColor={Colors.text.tertiary}
-                keyboardType="decimal-pad"
-              />
-            </View>
+            {isCash ? (
+              <>
+                <View style={styles.inputGroup}>
+                  <Text style={styles.label}>Amount (USD)</Text>
+                  <TextInput
+                    style={styles.input}
+                    value={quantity}
+                    onChangeText={setQuantity}
+                    placeholder="0.00"
+                    placeholderTextColor={Colors.text.tertiary}
+                    keyboardType="decimal-pad"
+                  />
+                </View>
 
-            <View style={styles.inputGroup}>
-              <Text style={styles.label}>Current Price</Text>
-              <TextInput
-                style={styles.input}
-                value={currentPrice}
-                onChangeText={setCurrentPrice}
-                placeholder="0.00"
-                placeholderTextColor={Colors.text.tertiary}
-                keyboardType="decimal-pad"
-              />
-            </View>
+                <View style={styles.inputGroup}>
+                  <Text style={styles.label}>Interest Rate (%)</Text>
+                  <TextInput
+                    style={styles.input}
+                    value={interestRate}
+                    onChangeText={setInterestRate}
+                    placeholder="e.g., 4.50"
+                    placeholderTextColor={Colors.text.tertiary}
+                    keyboardType="decimal-pad"
+                  />
+                </View>
+              </>
+            ) : (
+              <>
+                <View style={styles.inputGroup}>
+                  <Text style={styles.label}>Purchase Price</Text>
+                  <TextInput
+                    style={styles.input}
+                    value={purchasePrice}
+                    onChangeText={setPurchasePrice}
+                    placeholder="0.00"
+                    placeholderTextColor={Colors.text.tertiary}
+                    keyboardType="decimal-pad"
+                  />
+                </View>
 
-            {asset.type !== 'real-estate' && (
-              <View style={styles.inputGroup}>
-                <Text style={styles.label}>Quantity</Text>
-                <TextInput
-                  style={styles.input}
-                  value={quantity}
-                  onChangeText={setQuantity}
-                  placeholder="0"
-                  placeholderTextColor={Colors.text.tertiary}
-                  keyboardType="decimal-pad"
-                />
-              </View>
+                <View style={styles.inputGroup}>
+                  <Text style={styles.label}>Current Price</Text>
+                  <TextInput
+                    style={styles.input}
+                    value={currentPrice}
+                    onChangeText={setCurrentPrice}
+                    placeholder="0.00"
+                    placeholderTextColor={Colors.text.tertiary}
+                    keyboardType="decimal-pad"
+                  />
+                </View>
+
+                {asset.type !== 'real-estate' && (
+                  <View style={styles.inputGroup}>
+                    <Text style={styles.label}>Quantity</Text>
+                    <TextInput
+                      style={styles.input}
+                      value={quantity}
+                      onChangeText={setQuantity}
+                      placeholder="0"
+                      placeholderTextColor={Colors.text.tertiary}
+                      keyboardType="decimal-pad"
+                    />
+                  </View>
+                )}
+              </>
             )}
           </View>
         </ScrollView>
