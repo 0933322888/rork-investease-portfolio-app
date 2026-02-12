@@ -19,6 +19,10 @@ export interface MarketQuoteData {
   dayChange: number;
 }
 
+export interface SparklineData {
+  prices: number[];
+}
+
 export const [PortfolioProvider, usePortfolio] = createContextHook(() => {
   const queryClient = useQueryClient();
   const [assets, setAssets] = useState<Asset[]>([]);
@@ -26,6 +30,8 @@ export const [PortfolioProvider, usePortfolio] = createContextHook(() => {
   const [isRefreshingPrices, setIsRefreshingPrices] = useState(false);
   const [lastPriceRefresh, setLastPriceRefresh] = useState<number | null>(null);
   const [marketQuotes, setMarketQuotes] = useState<Record<string, MarketQuoteData>>({});
+  const [sparklineData, setSparklineData] = useState<Record<string, SparklineData>>({});
+  const hasLoadedSparklinesRef = useRef(false);
 
   const assetsQuery = useQuery({
     queryKey: ['assets'],
@@ -716,12 +722,58 @@ export const [PortfolioProvider, usePortfolio] = createContextHook(() => {
     }
   }, [assets, saveAssetsMutation]);
 
+  const fetchSparklineData = useCallback(async () => {
+    const symbolAssets = assets.filter(
+      (a) => a.symbol && MARKET_PRICE_TYPES.includes(a.type)
+    );
+    if (symbolAssets.length === 0) return;
+
+    const uniqueSymbols = [...new Set(symbolAssets.map((a) => a.symbol!.toUpperCase()))];
+    const newSparklines: Record<string, SparklineData> = {};
+
+    await Promise.all(
+      uniqueSymbols.map(async (symbol) => {
+        try {
+          const response = await fetch(
+            `/api/trpc/marketData.getHistoricalPrices?input=${encodeURIComponent(
+              JSON.stringify({ json: { symbol, range: '1M' } })
+            )}`
+          );
+          if (!response.ok) return;
+          const data = await response.json();
+          const result = data.result?.data?.json;
+          if (!result?.success || !result.data || result.data.length === 0) return;
+
+          const prices = result.data.map((p: { price: number }) => p.price);
+          const sampled = prices.length > 12
+            ? Array.from({ length: 12 }, (_, i) => prices[Math.floor((i / 11) * (prices.length - 1))])
+            : prices;
+
+          newSparklines[symbol] = { prices: sampled };
+        } catch {
+        }
+      })
+    );
+
+    if (Object.keys(newSparklines).length > 0) {
+      setSparklineData((prev) => ({ ...prev, ...newSparklines }));
+      console.log('[Portfolio] Sparkline data loaded for', Object.keys(newSparklines).length, 'symbols');
+    }
+  }, [assets]);
+
   useEffect(() => {
     if (assets.length > 0 && !hasRefreshedRef.current) {
       hasRefreshedRef.current = true;
       refreshMarketPrices();
     }
   }, [assets, refreshMarketPrices]);
+
+  useEffect(() => {
+    if (assets.length > 0 && !hasLoadedSparklinesRef.current) {
+      hasLoadedSparklinesRef.current = true;
+      fetchSparklineData();
+    }
+  }, [assets, fetchSparklineData]);
 
   const removeAllPlaidAccounts = async () => {
     setPlaidAccounts([]);
@@ -758,5 +810,6 @@ export const [PortfolioProvider, usePortfolio] = createContextHook(() => {
     isRefreshingPrices,
     lastPriceRefresh,
     marketQuotes,
+    sparklineData,
   };
 });

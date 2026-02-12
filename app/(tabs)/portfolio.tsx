@@ -7,7 +7,7 @@ import Colors from '@/constants/colors';
 import GradientBackground from '@/components/GradientBackground';
 import { spacing, borderRadius } from '@/constants/spacing';
 import { typography } from '@/constants/typography';
-import { usePortfolio } from '@/contexts/PortfolioContext';
+import { usePortfolio, type SparklineData } from '@/contexts/PortfolioContext';
 import { ASSET_TYPES, AssetType } from '@/types/assets';
 import { Asset } from '@/types/assets';
 
@@ -24,36 +24,16 @@ const ICONS = {
 const SPARKLINE_WIDTH = 48;
 const SPARKLINE_HEIGHT = 24;
 
-function MiniSparkline({ isPositive, seed }: { isPositive: boolean; seed: number }) {
-  const data = useMemo(() => {
-    const random = (s: number) => {
-      const x = Math.sin(s) * 10000;
-      return x - Math.floor(x);
-    };
-    
-    const points: number[] = [];
-    let value = 50;
-    for (let i = 0; i < 7; i++) {
-      const change = (random(seed + i) - 0.5) * 20;
-      value = Math.max(10, Math.min(90, value + change));
-      points.push(value);
-    }
-    
-    if (isPositive) {
-      points[points.length - 1] = Math.max(points[points.length - 1], points[0] + 10);
-    } else {
-      points[points.length - 1] = Math.min(points[points.length - 1], points[0] - 10);
-    }
-    
-    return points;
-  }, [isPositive, seed]);
+function MiniSparkline({ prices }: { prices: number[] }) {
+  if (prices.length < 2) return null;
 
-  const max = Math.max(...data);
-  const min = Math.min(...data);
+  const isPositive = prices[prices.length - 1] >= prices[0];
+  const max = Math.max(...prices);
+  const min = Math.min(...prices);
   const range = max - min || 1;
 
-  const pathPoints = data.map((value, index) => {
-    const x = (index / (data.length - 1)) * SPARKLINE_WIDTH;
+  const pathPoints = prices.map((value, index) => {
+    const x = (index / (prices.length - 1)) * SPARKLINE_WIDTH;
     const y = SPARKLINE_HEIGHT - ((value - min) / range) * SPARKLINE_HEIGHT;
     return `${x},${y}`;
   });
@@ -80,11 +60,12 @@ interface AssetItemProps {
   onEdit: (asset: Asset) => void;
   onDelete: (asset: Asset) => void;
   quote?: { price: number; changePercent: number; dayChange: number } | null;
+  sparkline?: SparklineData | null;
 }
 
 const MARKET_ASSET_TYPES = ['stocks', 'crypto'];
 
-function AssetItem({ asset, onEdit, onDelete, quote }: AssetItemProps) {
+function AssetItem({ asset, onEdit, onDelete, quote, sparkline }: AssetItemProps) {
   const isCash = asset.type === 'cash';
   const value = isCash ? asset.quantity : asset.quantity * asset.currentPrice;
   const cost = isCash ? asset.quantity : asset.quantity * asset.purchasePrice;
@@ -93,8 +74,6 @@ function AssetItem({ asset, onEdit, onDelete, quote }: AssetItemProps) {
   const isPositive = gain >= 0;
   const hasMarketData = quote && MARKET_ASSET_TYPES.includes(asset.type) && asset.symbol;
   const dayChangePositive = quote ? quote.dayChange >= 0 : true;
-
-  const sparklineSeed = asset.id.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
 
   const handlePress = () => {
     Alert.alert(
@@ -141,6 +120,8 @@ function AssetItem({ asset, onEdit, onDelete, quote }: AssetItemProps) {
       <View style={styles.assetMiddle}>
         {isCash ? (
           null
+        ) : hasMarketData && sparkline && sparkline.prices.length >= 2 ? (
+          <MiniSparkline prices={sparkline.prices} />
         ) : hasMarketData ? (
           <View style={[styles.dayChangePill, dayChangePositive ? styles.dayChangePillPositive : styles.dayChangePillNegative]}>
             <Text style={[styles.dayChangeText, dayChangePositive ? styles.positive : styles.negative]}>
@@ -148,7 +129,7 @@ function AssetItem({ asset, onEdit, onDelete, quote }: AssetItemProps) {
             </Text>
           </View>
         ) : (
-          <MiniSparkline isPositive={isPositive} seed={sparklineSeed} />
+          null
         )}
       </View>
       <View style={styles.assetRight}>
@@ -177,7 +158,7 @@ function formatTimeAgo(timestamp: number | null): string {
 
 export default function PortfolioScreen() {
   const router = useRouter();
-  const { assetsByType, deleteAsset, totalValue, totalGain, totalGainPercent, assets, lastPriceRefresh, marketQuotes } = usePortfolio();
+  const { assetsByType, deleteAsset, totalValue, totalGain, totalGainPercent, assets, lastPriceRefresh, marketQuotes, sparklineData } = usePortfolio();
 
   const groupsWithAssets = ASSET_TYPES.filter((type) => assetsByType[type.id]?.length > 0);
   const isPositive = totalGain >= 0;
@@ -279,6 +260,7 @@ export default function PortfolioScreen() {
                         onEdit={handleEditAsset}
                         onDelete={handleDeleteAsset}
                         quote={asset.symbol ? marketQuotes[asset.symbol.toUpperCase()] || null : null}
+                        sparkline={asset.symbol ? sparklineData[asset.symbol.toUpperCase()] || null : null}
                       />
                     ))}
                   </View>
