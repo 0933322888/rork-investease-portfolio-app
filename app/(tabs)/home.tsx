@@ -499,14 +499,6 @@ export default function HomeScreen() {
               </View>
             </View>
             <MiniRadarChart dimensions={fingerprint.dimensions} />
-            <Text style={styles.radarInterpretation} numberOfLines={2}>{fingerprint.interpretation}</Text>
-            <TouchableOpacity
-              style={styles.ctaButton}
-              onPress={() => router.push('/(tabs)/insights' as any)}
-              activeOpacity={0.8}
-            >
-              <Text style={styles.ctaText}>Improve my portfolio</Text>
-            </TouchableOpacity>
           </AnimatedCard>
         )}
 

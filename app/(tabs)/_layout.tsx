@@ -27,14 +27,16 @@ export function useInsightsRefresh() {
 
 function getIconForTab(tab: ActiveTab) {
   switch (tab) {
-    case "portfolio":
+    case "home":
       return <RefreshCw size={24} color="#FFFFFF" strokeWidth={2.5} />;
+    case "portfolio":
+      return <Plus size={24} color="#FFFFFF" strokeWidth={2.5} />;
     case "insights":
       return <Wand2 size={24} color="#FFFFFF" strokeWidth={2.5} />;
     case "settings":
       return <HelpCircle size={24} color="#FFFFFF" strokeWidth={2.5} />;
     default:
-      return <Plus size={24} color="#FFFFFF" strokeWidth={2.5} />;
+      return <RefreshCw size={24} color="#FFFFFF" strokeWidth={2.5} />;
   }
 }
 
@@ -161,11 +163,13 @@ export default function TabLayout() {
           listeners={({ navigation }) => ({
             tabPress: (e) => {
               e.preventDefault();
-              if (activeTab === "portfolio") {
+              if (activeTab === "home") {
                 if (!isRefreshingPrices) {
                   centerButtonRef.current?.spin();
                   refreshMarketPrices();
                 }
+              } else if (activeTab === "portfolio") {
+                navigation.navigate('add-asset');
               } else if (activeTab === "insights") {
                 triggerInsightsRefresh();
               } else if (activeTab === "settings") {
@@ -185,7 +189,10 @@ export default function TabLayout() {
                   ]
                 );
               } else {
-                navigation.navigate('add-asset');
+                if (!isRefreshingPrices) {
+                  centerButtonRef.current?.spin();
+                  refreshMarketPrices();
+                }
               }
             },
           })}
