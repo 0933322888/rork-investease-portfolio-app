@@ -1,7 +1,7 @@
-import React, { useEffect, useRef } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
+import React, { useEffect, useMemo, useRef } from 'react';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Dimensions } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Lock, TrendingUp, Globe, PieChart, Sparkles, Wand2, ChevronRight, AlertTriangle, ShieldCheck, BarChart3 } from 'lucide-react-native';
+import { Lock, TrendingUp, Globe, PieChart, Sparkles, Wand2, ChevronRight, AlertTriangle, ShieldCheck, BarChart3, Radar } from 'lucide-react-native';
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
@@ -10,6 +10,7 @@ import Animated, {
   withDelay,
   Easing,
 } from 'react-native-reanimated';
+import Svg, { Polygon, Line, Circle } from 'react-native-svg';
 import Colors from '@/constants/colors';
 import GradientBackground from '@/components/GradientBackground';
 import { spacing, borderRadius } from '@/constants/spacing';
@@ -17,6 +18,144 @@ import { typography } from '@/constants/typography';
 import { useInsightsRefresh } from './_layout';
 import { useSubscription } from '@/contexts/SubscriptionContext';
 import { usePortfolio } from '@/contexts/PortfolioContext';
+import { calculateRiskFingerprint, RiskDimension } from '@/utils/riskFingerprint';
+
+const { width: screenWidth } = Dimensions.get('window');
+const CHART_SIZE = Math.min(screenWidth - spacing.lg * 4, 280);
+const CHART_CENTER = CHART_SIZE / 2;
+const MAX_RADIUS = CHART_CENTER - 50;
+
+function getColorForScore(score: number): string {
+  if (score > 70) return '#FF6B6B';
+  if (score > 50) return '#F5B14C';
+  if (score > 30) return '#FFCC00';
+  return '#32D583';
+}
+
+function RiskRadarChart({ dimensions }: { dimensions: RiskDimension[] }) {
+  const angleStep = (Math.PI * 2) / dimensions.length;
+
+  const getPoint = (index: number, value: number) => {
+    const angle = angleStep * index - Math.PI / 2;
+    const radius = (value / 100) * MAX_RADIUS;
+    return {
+      x: CHART_CENTER + radius * Math.cos(angle),
+      y: CHART_CENTER + radius * Math.sin(angle),
+    };
+  };
+
+  const getLabelPoint = (index: number) => {
+    const angle = angleStep * index - Math.PI / 2;
+    const radius = MAX_RADIUS + 20;
+    return {
+      x: CHART_CENTER + radius * Math.cos(angle),
+      y: CHART_CENTER + radius * Math.sin(angle),
+    };
+  };
+
+  const polygonPoints = dimensions
+    .map((dim, index) => {
+      const point = getPoint(index, dim.score);
+      return `${point.x},${point.y}`;
+    })
+    .join(' ');
+
+  const levels = [20, 40, 60, 80, 100];
+
+  return (
+    <View style={styles.radarContainer}>
+      <Svg width={CHART_SIZE} height={CHART_SIZE}>
+        {levels.map((level) => {
+          const points = dimensions
+            .map((_, index) => {
+              const point = getPoint(index, level);
+              return `${point.x},${point.y}`;
+            })
+            .join(' ');
+          return (
+            <Polygon
+              key={level}
+              points={points}
+              fill="none"
+              stroke={Colors.border.light}
+              strokeWidth={1}
+              opacity={0.6}
+            />
+          );
+        })}
+        {dimensions.map((_, index) => {
+          const outerPoint = getPoint(index, 100);
+          return (
+            <Line
+              key={index}
+              x1={CHART_CENTER}
+              y1={CHART_CENTER}
+              x2={outerPoint.x}
+              y2={outerPoint.y}
+              stroke={Colors.border.light}
+              strokeWidth={1}
+              opacity={0.6}
+            />
+          );
+        })}
+        <Polygon
+          points={polygonPoints}
+          fill={Colors.accent}
+          fillOpacity={0.2}
+          stroke={Colors.accent}
+          strokeWidth={2.5}
+        />
+        {dimensions.map((dim, index) => {
+          const point = getPoint(index, dim.score);
+          return (
+            <Circle
+              key={index}
+              cx={point.x}
+              cy={point.y}
+              r={4}
+              fill={Colors.accent}
+            />
+          );
+        })}
+      </Svg>
+      {dimensions.map((dim, index) => {
+        const labelPoint = getLabelPoint(index);
+        const isLeft = labelPoint.x < CHART_CENTER - 15;
+        const isRight = labelPoint.x > CHART_CENTER + 15;
+        const isTop = labelPoint.y < CHART_CENTER - 15;
+        const isBottom = labelPoint.y > CHART_CENTER + 15;
+
+        let textAlign: 'left' | 'center' | 'right' = 'center';
+        if (isLeft) textAlign = 'right';
+        if (isRight) textAlign = 'left';
+
+        let translateX = -40;
+        if (isLeft) translateX = -80;
+        if (isRight) translateX = 0;
+
+        let translateY = -10;
+        if (isTop) translateY = -24;
+        if (isBottom) translateY = 4;
+
+        return (
+          <View
+            key={index}
+            style={{
+              position: 'absolute',
+              left: labelPoint.x,
+              top: labelPoint.y,
+              width: 80,
+              transform: [{ translateX }, { translateY }],
+            }}
+          >
+            <Text style={[styles.radarLabelText, { textAlign }]} numberOfLines={2}>{dim.label}</Text>
+            <Text style={[styles.radarScoreText, { textAlign }]}>{dim.score.toFixed(0)}</Text>
+          </View>
+        );
+      })}
+    </View>
+  );
+}
 
 interface InsightPreviewProps {
   icon: React.ReactNode;
@@ -132,6 +271,7 @@ function PremiumInsights() {
   const headerGlow = useSharedValue(0);
   const isFirst = useRef(true);
   const { assets } = usePortfolio();
+  const fingerprint = useMemo(() => calculateRiskFingerprint(assets), [assets]);
 
   useEffect(() => {
     if (isFirst.current) {
@@ -441,6 +581,50 @@ function PremiumInsights() {
               </View>
             </View>
           )}
+        </View>
+
+        <View style={styles.sectionHeader}>
+          <Radar size={18} color={Colors.text.secondary} strokeWidth={2} />
+          <Text style={styles.sectionTitle}>Risk Fingerprint</Text>
+        </View>
+        <View style={styles.detailCard}>
+          <View style={styles.radarChartWrapper}>
+            <RiskRadarChart dimensions={fingerprint.dimensions} />
+          </View>
+          <Text style={styles.fingerprintInterpretation}>{fingerprint.interpretation}</Text>
+          {fingerprint.badges.length > 0 && (
+            <View style={styles.fingerprintBadges}>
+              {fingerprint.badges.map((badge, index) => (
+                <View key={index} style={styles.fingerprintBadge}>
+                  <Text style={styles.fingerprintBadgeText}>{badge}</Text>
+                </View>
+              ))}
+            </View>
+          )}
+        </View>
+
+        <View style={styles.detailCard}>
+          <Text style={styles.riskDimensionsTitle}>Risk Dimensions</Text>
+          {fingerprint.dimensions.map((dim) => (
+            <View key={dim.key} style={styles.riskDimensionItem}>
+              <View style={styles.riskDimensionHeader}>
+                <Text style={styles.riskDimensionLabel}>{dim.label}</Text>
+                <Text style={styles.riskDimensionScore}>{dim.score.toFixed(0)}/100</Text>
+              </View>
+              <Text style={styles.riskDimensionDesc}>{dim.description}</Text>
+              <View style={styles.riskProgressBar}>
+                <View
+                  style={[
+                    styles.riskProgressFill,
+                    {
+                      width: `${dim.score}%`,
+                      backgroundColor: getColorForScore(dim.score),
+                    },
+                  ]}
+                />
+              </View>
+            </View>
+          ))}
         </View>
       </ScrollView>
     </SafeAreaView>
@@ -998,5 +1182,93 @@ const styles = StyleSheet.create({
   recDesc: {
     ...typography.footnote,
     color: Colors.text.secondary,
+  },
+  radarContainer: {
+    width: CHART_SIZE,
+    height: CHART_SIZE,
+    position: 'relative' as const,
+  },
+  radarChartWrapper: {
+    alignItems: 'center' as const,
+    marginBottom: spacing.lg,
+  },
+  radarLabelText: {
+    ...typography.caption,
+    color: Colors.text.secondary,
+    fontWeight: '600' as const,
+    marginBottom: 2,
+    fontSize: 10,
+  },
+  radarScoreText: {
+    ...typography.caption,
+    color: Colors.accent,
+    fontWeight: '700' as const,
+    fontSize: 10,
+  },
+  fingerprintInterpretation: {
+    ...typography.body,
+    color: Colors.text.primary,
+    lineHeight: 22,
+    textAlign: 'center' as const,
+    marginBottom: spacing.md,
+  },
+  fingerprintBadges: {
+    flexDirection: 'row' as const,
+    flexWrap: 'wrap' as const,
+    gap: spacing.sm,
+    justifyContent: 'center' as const,
+  },
+  fingerprintBadge: {
+    backgroundColor: Colors.accent + '15',
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.xs,
+    borderRadius: borderRadius.full,
+    borderWidth: 1,
+    borderColor: Colors.accent + '30',
+  },
+  fingerprintBadgeText: {
+    ...typography.caption,
+    color: Colors.accent,
+    fontWeight: '600' as const,
+  },
+  riskDimensionsTitle: {
+    ...typography.headline,
+    color: Colors.text.primary,
+    marginBottom: spacing.lg,
+  },
+  riskDimensionItem: {
+    marginBottom: spacing.lg,
+  },
+  riskDimensionHeader: {
+    flexDirection: 'row' as const,
+    justifyContent: 'space-between' as const,
+    alignItems: 'center' as const,
+    marginBottom: spacing.xs,
+  },
+  riskDimensionLabel: {
+    ...typography.callout,
+    color: Colors.text.primary,
+    fontWeight: '600' as const,
+    flex: 1,
+  },
+  riskDimensionScore: {
+    ...typography.callout,
+    color: Colors.accent,
+    fontWeight: '700' as const,
+  },
+  riskDimensionDesc: {
+    ...typography.caption,
+    color: Colors.text.secondary,
+    marginBottom: spacing.sm,
+  },
+  riskProgressBar: {
+    height: 6,
+    backgroundColor: Colors.border.light,
+    borderRadius: borderRadius.sm,
+    overflow: 'hidden' as const,
+  },
+  riskProgressFill: {
+    height: '100%' as const,
+    borderRadius: borderRadius.sm,
   },
 });

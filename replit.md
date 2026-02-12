@@ -33,7 +33,6 @@ A cross-platform React Native investment portfolio tracking app built with Expo.
 │   ├── _layout.tsx        # Root layout with ClerkProvider + auth redirect
 │   ├── onboarding.tsx     # Onboarding screen
 │   ├── add-asset.tsx      # Add new asset modal
-│   ├── risk-fingerprint.tsx # Risk assessment modal
 │   └── connect-plaid.tsx  # Plaid connection modal
 ├── backend/               # Server-side code
 │   ├── db/               # Database (Drizzle ORM schema, migration, connection)
@@ -136,6 +135,12 @@ Database (auto-configured by Replit):
 - 5-tab navigation (Home, Portfolio, + Add, Insights, Settings)
 
 ## Recent Changes
+- **Risk Fingerprint Merge (Feb 2026)**:
+  - Merged Portfolio Fingerprint page into the Insights tab (PremiumInsights component)
+  - Radar chart, interpretation text, badges, and risk dimensions now appear in Insights
+  - Removed standalone risk-fingerprint.tsx page
+  - Home "Improve my portfolio" button now navigates to Insights tab
+  - Real historical price sparklines on portfolio asset items (FMP 1M data, sampled to 12 points)
 - **Live Market Prices (Feb 2026)**:
   - Market Prices card on Home tab with horizontally scrollable live tickers
   - Per-unit market price shown on each stock/crypto asset in Portfolio tab

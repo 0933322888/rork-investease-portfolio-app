@@ -371,7 +371,7 @@ export default function HomeScreen() {
             </View>
             <TouchableOpacity
               style={styles.ctaButton}
-              onPress={() => router.push('/risk-fingerprint')}
+              onPress={() => router.push('/(tabs)/insights' as any)}
               activeOpacity={0.8}
             >
               <Text style={styles.ctaText}>Improve my portfolio</Text>
