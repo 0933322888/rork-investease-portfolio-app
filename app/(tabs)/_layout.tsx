@@ -73,8 +73,8 @@ const CenterButton = forwardRef<CenterButtonHandle, { activeTab: ActiveTab; isPr
           withSpring(1, { damping: 10, stiffness: 200 })
         );
         rotate.value = withSequence(
-          withTiming(rotate.value + 180, {
-            duration: 300,
+          withTiming(rotate.value + 360, {
+            duration: 400,
             easing: Easing.out(Easing.cubic),
           })
         );

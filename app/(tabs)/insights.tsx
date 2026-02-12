@@ -695,10 +695,6 @@ export default function InsightsScreen() {
         showsVerticalScrollIndicator={false}
       >
         <Animated.View style={[styles.header, headerGlowStyle]}>
-          <View style={styles.headerBadge}>
-            <Sparkles size={16} color={Colors.accent} strokeWidth={2} />
-            <Text style={styles.headerBadgeText}>Premium</Text>
-          </View>
           <Text style={styles.headerTitle}>Deeper Insights</Text>
           <Text style={styles.headerDescription}>
             Understand your portfolio better with advanced analytics and personalized recommendations
