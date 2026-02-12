@@ -41,14 +41,6 @@ const MOCK_ACCOUNTS: ConnectedAccount[] = [
     dailyChangePercent: -2.4,
     color: Colors.crypto,
   },
-  {
-    id: '4',
-    institution: 'Rental Property',
-    badge: 'Real Estate',
-    balance: 310000,
-    dailyChangePercent: 0.3,
-    color: Colors.realEstate,
-  },
 ];
 
 const ACCOUNT_OPTIONS = [
@@ -95,17 +87,10 @@ export default function ConnectedAccountsSection() {
     }, 200);
   };
 
-  const handleSeeAll = () => {
-    router.push('/(tabs)/settings');
-  };
-
   return (
     <View style={styles.container}>
       <View style={styles.header}>
         <Text style={styles.title}>Connected Accounts</Text>
-        <TouchableOpacity onPress={handleSeeAll} activeOpacity={0.7}>
-          <Text style={styles.seeAll}>See all</Text>
-        </TouchableOpacity>
       </View>
       {Platform.OS === 'web' ? (
         <div
@@ -223,10 +208,6 @@ const styles = StyleSheet.create({
   title: {
     ...typography.title3,
     color: Colors.text.primary,
-  },
-  seeAll: {
-    ...typography.body,
-    color: Colors.accent,
   },
   scrollContent: {
     paddingLeft: spacing.lg,
