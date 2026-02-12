@@ -22,7 +22,12 @@
         "foregroundImage": "./assets/images/adaptive-icon.png",
         "backgroundColor": "#0B1220"
       },
-      "package": "com.assetra.app"
+      "package": "com.assetra.app",
+      "permissions": [
+        "android.permission.USE_BIOMETRIC",
+        "android.permission.USE_FINGERPRINT",
+        "android.permission.RECORD_AUDIO"
+      ]
     },
     "web": {
       "favicon": "./assets/images/favicon.png",
@@ -45,8 +50,9 @@
         "origin": false
       },
       "eas": {
-        "projectId": ""
+        "projectId": "dbc56126-7007-4fd9-a3b1-f0bd993f412c"
       }
-    }
+    },
+    "owner": "andrii_ua"
   }
 }
