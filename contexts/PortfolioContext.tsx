@@ -99,6 +99,7 @@ export const [PortfolioProvider, usePortfolio] = createContextHook(() => {
           purchasePrice: 350000.00,
           currentPrice: 385000.00,
           currency: 'USD',
+          isRented: true,
           monthlyRent: 2800,
           addedAt: Date.now() - 86400000 * 365,
         },
@@ -110,7 +111,7 @@ export const [PortfolioProvider, usePortfolio] = createContextHook(() => {
           purchasePrice: 520000.00,
           currentPrice: 565000.00,
           currency: 'USD',
-          monthlyRent: 3500,
+          isRented: false,
           addedAt: Date.now() - 86400000 * 730,
         },
         {

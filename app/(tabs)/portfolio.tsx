@@ -125,6 +125,11 @@ function AssetItem({ asset, onEdit, onDelete, quote }: AssetItemProps) {
                 {asset.interestRate.toFixed(2)}% APY
               </Text>
             )}
+            {asset.type === 'real-estate' && asset.isRented && asset.monthlyRent !== undefined && asset.monthlyRent > 0 && (
+              <Text style={styles.assetMarketPrice}>
+                ${asset.monthlyRent.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}/mo
+              </Text>
+            )}
           </View>
         </View>
       </View>

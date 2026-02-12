@@ -12,6 +12,7 @@ export interface Asset {
   currency: string;
   addedAt?: number;
   purchaseDate?: string;
+  isRented?: boolean;
   monthlyRent?: number;
   monthlyIncome?: number;
   dueDate?: string;

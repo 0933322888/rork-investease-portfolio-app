@@ -10,6 +10,7 @@ import {
   TextInput,
   KeyboardAvoidingView,
   Platform,
+  Switch,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Colors from '@/constants/colors';
@@ -36,6 +37,7 @@ export default function AddAssetScreen() {
   const [purchasePrice, setPurchasePrice] = useState('');
   const [address, setAddress] = useState('');
   const [quantity, setQuantity] = useState('');
+  const [isRented, setIsRented] = useState(false);
   const [monthlyRent, setMonthlyRent] = useState('');
   const [monthlyIncome, setMonthlyIncome] = useState('');
   const [dueDate, setDueDate] = useState('');
@@ -60,6 +62,7 @@ export default function AddAssetScreen() {
       purchasePrice: 0,
       currentPrice: 0,
       currency: 'USD',
+      isRented: undefined as boolean | undefined,
       monthlyRent: undefined as number | undefined,
       monthlyIncome: undefined as number | undefined,
       dueDate: undefined as string | undefined,
@@ -84,14 +87,16 @@ export default function AddAssetScreen() {
       baseAsset.purchasePrice = parseFloat(purchasePrice);
       baseAsset.currentPrice = parseFloat(mockCurrentPrice.toFixed(2));
     } else if (selectedType === 'real-estate') {
-      if (!symbol.trim() || !purchasePrice.trim() || !monthlyRent.trim()) return;
+      if (!symbol.trim() || !purchasePrice.trim()) return;
+      if (isRented && !monthlyRent.trim()) return;
       const mockCurrentPrice = parseFloat(purchasePrice) * (1 + (Math.random() * 0.05));
       baseAsset.name = symbol;
       baseAsset.quantity = 1;
       baseAsset.address = address;
       baseAsset.purchasePrice = parseFloat(purchasePrice);
       baseAsset.currentPrice = parseFloat(mockCurrentPrice.toFixed(2));
-      baseAsset.monthlyRent = parseFloat(monthlyRent);
+      baseAsset.isRented = isRented;
+      baseAsset.monthlyRent = isRented && monthlyRent.trim() ? parseFloat(monthlyRent) : undefined;
     } else if (selectedType === 'cash') {
       if (!symbol.trim() || !quantity.trim()) return;
       const amount = parseFloat(quantity);
@@ -136,8 +141,11 @@ export default function AddAssetScreen() {
       return purchasePrice.trim() !== '' && !isNaN(parseFloat(purchasePrice)) &&
              quantity.trim() !== '' && !isNaN(parseFloat(quantity));
     } else if (selectedType === 'real-estate') {
-      return purchasePrice.trim() !== '' && !isNaN(parseFloat(purchasePrice)) &&
-             monthlyRent.trim() !== '' && !isNaN(parseFloat(monthlyRent));
+      const baseValid = purchasePrice.trim() !== '' && !isNaN(parseFloat(purchasePrice));
+      if (isRented) {
+        return baseValid && monthlyRent.trim() !== '' && !isNaN(parseFloat(monthlyRent));
+      }
+      return baseValid;
     } else if (selectedType === 'cash') {
       return quantity.trim() !== '' && !isNaN(parseFloat(quantity));
     } else if (selectedType === 'commodities') {
@@ -337,7 +345,6 @@ export default function AddAssetScreen() {
                       onChangeText={setAddress}
                       placeholder="123 Central Ave, New York, NY"
                       placeholderTextColor={Colors.text.tertiary}
-                      autoFocus
                       returnKeyType="next"
                     />
                   </View>
@@ -353,19 +360,30 @@ export default function AddAssetScreen() {
                       returnKeyType="next"
                     />
                   </View>
-                  <View style={styles.formGroup}>
-                    <Text style={styles.formLabel}>Monthly Rent Payment (USD)</Text>
-                    <TextInput
-                      style={styles.input}
-                      value={monthlyRent}
-                      onChangeText={setMonthlyRent}
-                      placeholder="2500.00"
-                      placeholderTextColor={Colors.text.tertiary}
-                      keyboardType="decimal-pad"
-                      returnKeyType="done"
-                      onSubmitEditing={handleSubmit}
+                  <View style={styles.switchRow}>
+                    <Text style={styles.switchLabel}>This property is rented</Text>
+                    <Switch
+                      value={isRented}
+                      onValueChange={setIsRented}
+                      trackColor={{ false: Colors.border.light, true: Colors.primary }}
+                      thumbColor="#FFFFFF"
                     />
                   </View>
+                  {isRented && (
+                    <View style={styles.formGroup}>
+                      <Text style={styles.formLabel}>Monthly Rent Income (USD)</Text>
+                      <TextInput
+                        style={styles.input}
+                        value={monthlyRent}
+                        onChangeText={setMonthlyRent}
+                        placeholder="2500.00"
+                        placeholderTextColor={Colors.text.tertiary}
+                        keyboardType="decimal-pad"
+                        returnKeyType="done"
+                        onSubmitEditing={handleSubmit}
+                      />
+                    </View>
+                  )}
                 </>
               )}
               {selectedType === 'cash' && (
@@ -629,6 +647,22 @@ const styles = StyleSheet.create({
   },
   formGroup: {
     gap: spacing.sm,
+  },
+  switchRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    backgroundColor: Colors.card,
+    borderWidth: 1,
+    borderColor: Colors.border.light,
+    borderRadius: borderRadius.md,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.md,
+  },
+  switchLabel: {
+    ...typography.body,
+    color: Colors.text.primary,
+    fontWeight: '500' as const,
   },
   formLabel: {
     ...typography.subhead,

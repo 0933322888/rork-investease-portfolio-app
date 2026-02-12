@@ -10,6 +10,7 @@ import {
   TextInput,
   KeyboardAvoidingView,
   Platform,
+  Switch,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Colors from '@/constants/colors';
@@ -30,8 +31,11 @@ export default function EditAssetScreen() {
   const [currentPrice, setCurrentPrice] = useState('');
   const [quantity, setQuantity] = useState('');
   const [interestRate, setInterestRate] = useState('');
+  const [isRented, setIsRented] = useState(false);
+  const [monthlyRent, setMonthlyRent] = useState('');
 
   const isCash = asset?.type === 'cash';
+  const isRealEstate = asset?.type === 'real-estate';
 
   useEffect(() => {
     if (asset) {
@@ -42,6 +46,8 @@ export default function EditAssetScreen() {
       setCurrentPrice(asset.currentPrice?.toString() || '');
       setQuantity(asset.quantity?.toString() || '');
       setInterestRate(asset.interestRate?.toString() || '');
+      setIsRented(asset.isRented || false);
+      setMonthlyRent(asset.monthlyRent?.toString() || '');
     }
   }, [asset]);
 
@@ -71,6 +77,16 @@ export default function EditAssetScreen() {
         currentPrice: 1,
         interestRate: interestRate ? parseFloat(interestRate) : undefined,
       });
+    } else if (isRealEstate) {
+      updateAsset(asset.id, {
+        name: name.trim() || asset.name,
+        address: address.trim() || undefined,
+        purchasePrice: parseFloat(purchasePrice) || asset.purchasePrice,
+        currentPrice: parseFloat(currentPrice) || asset.currentPrice,
+        quantity: 1,
+        isRented,
+        monthlyRent: isRented && monthlyRent.trim() ? parseFloat(monthlyRent) : undefined,
+      });
     } else {
       updateAsset(asset.id, {
         name: name.trim() || asset.name,
@@ -84,11 +100,16 @@ export default function EditAssetScreen() {
     router.back();
   };
 
-  const isFormValid = isCash
-    ? name.trim() !== '' && !isNaN(parseFloat(quantity))
-    : name.trim() !== '' &&
-      !isNaN(parseFloat(purchasePrice)) &&
-      (asset.type === 'real-estate' || !isNaN(parseFloat(quantity)));
+  const isFormValid = (() => {
+    if (!name.trim()) return false;
+    if (isCash) return !isNaN(parseFloat(quantity));
+    if (isRealEstate) {
+      const baseValid = !isNaN(parseFloat(purchasePrice));
+      if (isRented) return baseValid && monthlyRent.trim() !== '' && !isNaN(parseFloat(monthlyRent));
+      return baseValid;
+    }
+    return !isNaN(parseFloat(purchasePrice)) && (asset.type === 'real-estate' || !isNaN(parseFloat(quantity)));
+  })();
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
@@ -181,6 +202,56 @@ export default function EditAssetScreen() {
                   />
                 </View>
               </>
+            ) : isRealEstate ? (
+              <>
+                <View style={styles.inputGroup}>
+                  <Text style={styles.label}>Purchase Price (USD)</Text>
+                  <TextInput
+                    style={styles.input}
+                    value={purchasePrice}
+                    onChangeText={setPurchasePrice}
+                    placeholder="0.00"
+                    placeholderTextColor={Colors.text.tertiary}
+                    keyboardType="decimal-pad"
+                  />
+                </View>
+
+                <View style={styles.inputGroup}>
+                  <Text style={styles.label}>Current Value (USD)</Text>
+                  <TextInput
+                    style={styles.input}
+                    value={currentPrice}
+                    onChangeText={setCurrentPrice}
+                    placeholder="0.00"
+                    placeholderTextColor={Colors.text.tertiary}
+                    keyboardType="decimal-pad"
+                  />
+                </View>
+
+                <View style={styles.switchRow}>
+                  <Text style={styles.switchLabel}>This property is rented</Text>
+                  <Switch
+                    value={isRented}
+                    onValueChange={setIsRented}
+                    trackColor={{ false: Colors.border.light, true: Colors.primary }}
+                    thumbColor="#FFFFFF"
+                  />
+                </View>
+
+                {isRented && (
+                  <View style={styles.inputGroup}>
+                    <Text style={styles.label}>Monthly Rent Income (USD)</Text>
+                    <TextInput
+                      style={styles.input}
+                      value={monthlyRent}
+                      onChangeText={setMonthlyRent}
+                      placeholder="2500.00"
+                      placeholderTextColor={Colors.text.tertiary}
+                      keyboardType="decimal-pad"
+                    />
+                  </View>
+                )}
+              </>
             ) : (
               <>
                 <View style={styles.inputGroup}>
@@ -207,19 +278,17 @@ export default function EditAssetScreen() {
                   />
                 </View>
 
-                {asset.type !== 'real-estate' && (
-                  <View style={styles.inputGroup}>
-                    <Text style={styles.label}>Quantity</Text>
-                    <TextInput
-                      style={styles.input}
-                      value={quantity}
-                      onChangeText={setQuantity}
-                      placeholder="0"
-                      placeholderTextColor={Colors.text.tertiary}
-                      keyboardType="decimal-pad"
-                    />
-                  </View>
-                )}
+                <View style={styles.inputGroup}>
+                  <Text style={styles.label}>Quantity</Text>
+                  <TextInput
+                    style={styles.input}
+                    value={quantity}
+                    onChangeText={setQuantity}
+                    placeholder="0"
+                    placeholderTextColor={Colors.text.tertiary}
+                    keyboardType="decimal-pad"
+                  />
+                </View>
               </>
             )}
           </View>
@@ -279,6 +348,22 @@ const styles = StyleSheet.create({
   },
   inputGroup: {
     gap: spacing.sm,
+  },
+  switchRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    backgroundColor: Colors.card,
+    borderWidth: 1,
+    borderColor: Colors.border.light,
+    borderRadius: borderRadius.md,
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.md,
+  },
+  switchLabel: {
+    ...typography.body,
+    color: Colors.text.primary,
+    fontWeight: '500' as const,
   },
   label: {
     ...typography.subhead,
