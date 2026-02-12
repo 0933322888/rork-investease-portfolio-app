@@ -40,6 +40,7 @@ export function calculateRiskFingerprint(assets: Asset[]): RiskFingerprint {
     'fixed-income': 0,
     'real-estate': 0,
     cash: 0,
+    other: 0,
   };
   
   assets.forEach((asset) => {

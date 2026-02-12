@@ -6,7 +6,7 @@ import {
 import React, { useMemo, useEffect } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Dimensions, Platform, Image } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import Svg, { Path, Defs, LinearGradient as SvgLinearGradient, Stop, Circle as SvgCircle, Rect, Line } from 'react-native-svg';
+import Svg, { Path, Defs, LinearGradient as SvgLinearGradient, Stop, Circle as SvgCircle, Rect, Line, Polygon } from 'react-native-svg';
 import Animated, { useSharedValue, useAnimatedStyle, withTiming, withDelay, Easing } from 'react-native-reanimated';
 import Colors from '@/constants/colors';
 import GradientBackground from '@/components/GradientBackground';
@@ -14,6 +14,7 @@ import { spacing, borderRadius } from '@/constants/spacing';
 import { typography } from '@/constants/typography';
 import { usePortfolio } from '@/contexts/PortfolioContext';
 import { ASSET_TYPES, AssetType } from '@/types/assets';
+import { calculateRiskFingerprint } from '@/utils/riskFingerprint';
 import ConnectedAccountsSection from '@/components/home/ConnectedAccountsSection';
 
 const { width } = Dimensions.get('window');
@@ -169,7 +170,90 @@ function getHealthScore(allocationData: { id: AssetType; percentage: number }[])
   return { score, label, detail };
 }
 
-const HEALTH_CATEGORIES = ['Diversification', 'Concentration', 'Volatility', 'Income'];
+const MINI_RADAR_SIZE = 140;
+const MINI_RADAR_CENTER = MINI_RADAR_SIZE / 2;
+const MINI_RADAR_RADIUS = MINI_RADAR_CENTER - 30;
+
+function MiniRadarChart({ dimensions }: { dimensions: { label: string; score: number }[] }) {
+  const angleStep = (Math.PI * 2) / dimensions.length;
+
+  const getPoint = (index: number, value: number) => {
+    const angle = angleStep * index - Math.PI / 2;
+    const radius = (value / 100) * MINI_RADAR_RADIUS;
+    return {
+      x: MINI_RADAR_CENTER + radius * Math.cos(angle),
+      y: MINI_RADAR_CENTER + radius * Math.sin(angle),
+    };
+  };
+
+  const polygonPoints = dimensions
+    .map((dim, index) => {
+      const point = getPoint(index, dim.score);
+      return `${point.x},${point.y}`;
+    })
+    .join(' ');
+
+  const levels = [33, 66, 100];
+
+  return (
+    <View style={{ width: MINI_RADAR_SIZE, height: MINI_RADAR_SIZE }}>
+      <Svg width={MINI_RADAR_SIZE} height={MINI_RADAR_SIZE}>
+        {levels.map((level) => {
+          const points = dimensions
+            .map((_, index) => {
+              const point = getPoint(index, level);
+              return `${point.x},${point.y}`;
+            })
+            .join(' ');
+          return (
+            <Polygon
+              key={level}
+              points={points}
+              fill="none"
+              stroke={Colors.border.light}
+              strokeWidth={0.8}
+              opacity={0.5}
+            />
+          );
+        })}
+        {dimensions.map((_, index) => {
+          const outerPoint = getPoint(index, 100);
+          return (
+            <Line
+              key={index}
+              x1={MINI_RADAR_CENTER}
+              y1={MINI_RADAR_CENTER}
+              x2={outerPoint.x}
+              y2={outerPoint.y}
+              stroke={Colors.border.light}
+              strokeWidth={0.5}
+              opacity={0.4}
+            />
+          );
+        })}
+        <Polygon
+          points={polygonPoints}
+          fill={Colors.accent}
+          fillOpacity={0.15}
+          stroke={Colors.accent}
+          strokeWidth={2}
+        />
+        {dimensions.map((dim, index) => {
+          const point = getPoint(index, dim.score);
+          return (
+            <SvgCircle
+              key={index}
+              cx={point.x}
+              cy={point.y}
+              r={3}
+              fill={Colors.accent}
+            />
+          );
+        })}
+      </Svg>
+    </View>
+  );
+}
 
 const INSIGHTS_DATA = [
   { icon: Landmark, text: 'You are 45% invested in US markets.', color: Colors.stocks },
@@ -251,6 +335,7 @@ export default function HomeScreen() {
   }, [assets, marketQuotes]);
 
   const health = useMemo(() => getHealthScore(allocationData), [allocationData]);
+  const fingerprint = useMemo(() => calculateRiskFingerprint(assets), [assets]);
   const isPositive = totalGain >= 0;
 
 
@@ -357,17 +442,19 @@ export default function HomeScreen() {
 
         {assets.length > 0 && (
           <AnimatedCard delay={240} style={styles.card}>
-            <View style={styles.healthHeader}>
-              <View>
-                <Text style={styles.cardTitle}>Portfolio Health</Text>
-                <Text style={styles.healthSubtitle}>{health.label} — {health.detail}</Text>
+            <Text style={styles.cardTitle}>Risk Fingerprint</Text>
+            <View style={styles.radarRow}>
+              <MiniRadarChart dimensions={fingerprint.dimensions} />
+              <View style={styles.radarInfo}>
+                <Text style={styles.radarLabel}>{fingerprint.overallRiskLevel}</Text>
+                <Text style={styles.radarDetail} numberOfLines={2}>{fingerprint.interpretation}</Text>
+                {fingerprint.dimensions.slice(0, 3).map((dim) => (
+                  <View key={dim.label} style={styles.radarDimRow}>
+                    <Text style={styles.radarDimLabel}>{dim.label}</Text>
+                    <Text style={styles.radarDimScore}>{dim.score}</Text>
+                  </View>
+                ))}
               </View>
-              <Text style={styles.healthScore}>{health.score}</Text>
-            </View>
-            <View style={styles.chipsRow}>
-              {HEALTH_CATEGORIES.map((cat) => (
-                <Chip key={cat} label={cat} />
-              ))}
             </View>
             <TouchableOpacity
               style={styles.ctaButton}
@@ -597,38 +684,41 @@ const styles = StyleSheet.create({
   donutWrapper: {
     marginLeft: spacing.md,
   },
-  healthHeader: {
+  radarRow: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'flex-start',
+    alignItems: 'center',
     marginBottom: spacing.md,
+    gap: spacing.md,
   },
-  healthSubtitle: {
-    fontSize: 14,
-    color: Colors.text.secondary,
-    marginTop: 4,
+  radarInfo: {
+    flex: 1,
   },
-  healthScore: {
-    fontSize: 32,
+  radarLabel: {
+    fontSize: 16,
     fontWeight: '700',
     color: Colors.text.primary,
+    marginBottom: 4,
   },
-  chipsRow: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: spacing.sm,
-    marginBottom: spacing.lg,
-  },
-  chip: {
-    paddingVertical: 6,
-    paddingHorizontal: 12,
-    borderRadius: 20,
-    backgroundColor: Colors.cardSoft,
-  },
-  chipText: {
+  radarDetail: {
     fontSize: 12,
     color: Colors.text.secondary,
-    fontWeight: '500',
+    marginBottom: spacing.sm,
+    lineHeight: 16,
+  },
+  radarDimRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingVertical: 3,
+  },
+  radarDimLabel: {
+    fontSize: 12,
+    color: Colors.text.secondary,
+  },
+  radarDimScore: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: Colors.accent,
   },
   ctaButton: {
     height: 48,

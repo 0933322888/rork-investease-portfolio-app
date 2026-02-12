@@ -430,6 +430,8 @@ const styles = StyleSheet.create({
   primaryButtonText: {
     ...typography.headline,
     color: "#FFFFFF",
+    paddingLeft: 15,
+    paddingRight: 15,
   },
   secondaryButton: {
     paddingVertical: spacing.md,
