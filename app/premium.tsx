@@ -1,7 +1,7 @@
-import React, { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert, ActivityIndicator } from 'react-native';
+import React from 'react';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert, ActivityIndicator, Platform } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Crown, Check, X, Sparkles, TrendingUp, Shield, Link2, BarChart3 } from 'lucide-react-native';
+import { Crown, Check, X, Sparkles, TrendingUp, Shield, Link2, BarChart3, RotateCcw } from 'lucide-react-native';
 import { useRouter } from 'expo-router';
 import Colors from '@/constants/colors';
 import GradientBackground from '@/components/GradientBackground';
@@ -34,7 +34,11 @@ const FEATURES = [
 
 export default function PremiumScreen() {
   const router = useRouter();
-  const { isPremium, purchase, isPurchasing } = useSubscription();
+  const { isPremium, purchase, isPurchasing, restore, isRestoring, offerings } = useSubscription();
+
+  const currentPackage = offerings?.availablePackages?.[0];
+  const priceString = currentPackage?.product?.priceString;
+  const periodText = currentPackage?.packageType === 'ANNUAL' ? '/year' : '/mo';
 
   const handleUpgrade = async () => {
     const success = await purchase();
@@ -44,8 +48,21 @@ export default function PremiumScreen() {
         'You now have access to all premium features.',
         [{ text: 'Let\'s Go', onPress: () => router.back() }]
       );
+    } else if (!success && isPurchasing === false) {
+      // only show error if not user-cancelled
+    }
+  };
+
+  const handleRestore = async () => {
+    const success = await restore();
+    if (success) {
+      Alert.alert(
+        'Purchases Restored',
+        'Your premium subscription has been restored.',
+        [{ text: 'Great', onPress: () => router.back() }]
+      );
     } else {
-      Alert.alert('Error', 'Something went wrong. Please try again.');
+      Alert.alert('No Purchases Found', 'We couldn\'t find any previous premium subscriptions for this account.');
     }
   };
 
@@ -118,11 +135,15 @@ export default function PremiumScreen() {
             <Sparkles size={18} color={Colors.accent} strokeWidth={2} />
             <Text style={styles.pricingLabel}>PREMIUM</Text>
           </View>
-          <View style={styles.priceRow}>
-            <Text style={styles.priceCurrency}>$</Text>
-            <Text style={styles.priceAmount}>9</Text>
-            <Text style={styles.pricePeriod}>.99/mo</Text>
-          </View>
+          {priceString ? (
+            <Text style={styles.priceText}>{priceString}{periodText}</Text>
+          ) : (
+            <View style={styles.priceRow}>
+              <Text style={styles.priceCurrency}>$</Text>
+              <Text style={styles.priceAmount}>9</Text>
+              <Text style={styles.pricePeriod}>.99/mo</Text>
+            </View>
+          )}
           <Text style={styles.pricingNote}>Cancel anytime</Text>
         </View>
 
@@ -130,7 +151,7 @@ export default function PremiumScreen() {
           style={[styles.upgradeButton, isPurchasing && styles.upgradeButtonDisabled]}
           onPress={handleUpgrade}
           activeOpacity={0.8}
-          disabled={isPurchasing}
+          disabled={isPurchasing || isRestoring}
         >
           {isPurchasing ? (
             <ActivityIndicator color="#FFFFFF" size="small" />
@@ -142,8 +163,27 @@ export default function PremiumScreen() {
           )}
         </TouchableOpacity>
 
+        {Platform.OS !== 'web' && (
+          <TouchableOpacity
+            style={styles.restoreButton}
+            onPress={handleRestore}
+            activeOpacity={0.7}
+            disabled={isPurchasing || isRestoring}
+          >
+            {isRestoring ? (
+              <ActivityIndicator color={Colors.accent} size="small" />
+            ) : (
+              <>
+                <RotateCcw size={16} color={Colors.accent} strokeWidth={2} />
+                <Text style={styles.restoreButtonText}>Restore Purchases</Text>
+              </>
+            )}
+          </TouchableOpacity>
+        )}
+
         <Text style={styles.termsText}>
-          By subscribing, you agree to our Terms of Service and Privacy Policy
+          By subscribing, you agree to our Terms of Service and Privacy Policy.
+          {Platform.OS !== 'web' ? ' Payment will be charged to your Google Play account. Subscription automatically renews unless cancelled at least 24 hours before the end of the current period.' : ''}
         </Text>
       </ScrollView>
     </SafeAreaView>
@@ -286,6 +326,12 @@ const styles = StyleSheet.create({
     color: Colors.text.secondary,
     marginTop: 12,
   },
+  priceText: {
+    fontSize: 36,
+    fontWeight: '800' as const,
+    color: Colors.text.primary,
+    marginBottom: spacing.sm,
+  },
   pricingNote: {
     ...typography.footnote,
     color: Colors.text.tertiary,
@@ -309,11 +355,25 @@ const styles = StyleSheet.create({
     fontWeight: '700' as const,
     fontSize: 18,
   },
+  restoreButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: spacing.sm,
+    paddingVertical: spacing.md,
+    marginBottom: spacing.sm,
+  },
+  restoreButtonText: {
+    ...typography.callout,
+    color: Colors.accent,
+    fontWeight: '600' as const,
+  },
   termsText: {
     ...typography.caption,
     color: Colors.text.tertiary,
     textAlign: 'center',
     marginBottom: spacing.xl,
+    lineHeight: 16,
   },
   alreadyPremium: {
     flex: 1,

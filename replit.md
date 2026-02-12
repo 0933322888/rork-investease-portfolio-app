@@ -149,6 +149,16 @@ Database (auto-configured by Replit):
   - Profile editing screen (edit name, change avatar, delete account)
   - tRPC endpoints: updateProfile (with auto-create), deleteAccount
   - Settings profile card tappable to navigate to profile editor
+- **RevenueCat Integration (Feb 2026)**:
+  - RevenueCat SDK (react-native-purchases) for real Google Play in-app subscriptions
+  - SubscriptionContext: RevenueCat on native, DB fallback on web
+  - Initializes RevenueCat with Clerk userId for cross-platform entitlement sync
+  - Purchase flow triggers Google Play billing sheet on native
+  - Restore purchases support with user feedback
+  - Offerings fetched from RevenueCat dashboard (pricing displayed dynamically)
+  - Entitlement ID: "premium" — must match RevenueCat dashboard config
+  - DB subscription status synced after successful RevenueCat purchase
+  - EAS env var: EXPO_PUBLIC_REVENUECAT_API_KEY (set via `eas env:create`)
 - **Premium Subscription Flow (Feb 2026)**:
   - Premium paywall screen (`app/premium.tsx`) with feature list, pricing, and upgrade button
   - tRPC endpoints for reading/updating subscription status from PostgreSQL
