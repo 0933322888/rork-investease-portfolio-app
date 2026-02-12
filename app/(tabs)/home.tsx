@@ -170,19 +170,30 @@ function getHealthScore(allocationData: { id: AssetType; percentage: number }[])
   return { score, label, detail };
 }
 
-const MINI_RADAR_SIZE = 140;
-const MINI_RADAR_CENTER = MINI_RADAR_SIZE / 2;
-const MINI_RADAR_RADIUS = MINI_RADAR_CENTER - 30;
+const CARD_PADDING = spacing.lg * 2;
+const RADAR_SIZE = width - spacing.lg * 2 - CARD_PADDING;
+const RADAR_CENTER = RADAR_SIZE / 2;
+const RADAR_LABEL_MARGIN = 40;
+const RADAR_RADIUS = RADAR_CENTER - RADAR_LABEL_MARGIN;
 
 function MiniRadarChart({ dimensions }: { dimensions: { label: string; score: number }[] }) {
   const angleStep = (Math.PI * 2) / dimensions.length;
 
   const getPoint = (index: number, value: number) => {
     const angle = angleStep * index - Math.PI / 2;
-    const radius = (value / 100) * MINI_RADAR_RADIUS;
+    const radius = (value / 100) * RADAR_RADIUS;
     return {
-      x: MINI_RADAR_CENTER + radius * Math.cos(angle),
-      y: MINI_RADAR_CENTER + radius * Math.sin(angle),
+      x: RADAR_CENTER + radius * Math.cos(angle),
+      y: RADAR_CENTER + radius * Math.sin(angle),
+    };
+  };
+
+  const getLabelPos = (index: number) => {
+    const angle = angleStep * index - Math.PI / 2;
+    const r = RADAR_RADIUS + 20;
+    return {
+      x: RADAR_CENTER + r * Math.cos(angle),
+      y: RADAR_CENTER + r * Math.sin(angle),
     };
   };
 
@@ -193,11 +204,21 @@ function MiniRadarChart({ dimensions }: { dimensions: { label: string; score: nu
     })
     .join(' ');
 
-  const levels = [33, 66, 100];
+  const levels = [25, 50, 75, 100];
+  const shortLabels = dimensions.map((d) => {
+    const words = d.label.split(' ');
+    return words.length > 1 ? words[0] : d.label;
+  });
 
   return (
-    <View style={{ width: MINI_RADAR_SIZE, height: MINI_RADAR_SIZE }}>
-      <Svg width={MINI_RADAR_SIZE} height={MINI_RADAR_SIZE}>
+    <View style={{ width: RADAR_SIZE, height: RADAR_SIZE, alignSelf: 'center' }}>
+      <Svg width={RADAR_SIZE} height={RADAR_SIZE}>
+        <Defs>
+          <SvgLinearGradient id="radarFill" x1="0" y1="0" x2="0" y2="1">
+            <Stop offset="0" stopColor={Colors.accent} stopOpacity="0.25" />
+            <Stop offset="1" stopColor={Colors.accent} stopOpacity="0.05" />
+          </SvgLinearGradient>
+        </Defs>
         {levels.map((level) => {
           const points = dimensions
             .map((_, index) => {
@@ -212,7 +233,7 @@ function MiniRadarChart({ dimensions }: { dimensions: { label: string; score: nu
               fill="none"
               stroke={Colors.border.light}
               strokeWidth={0.8}
-              opacity={0.5}
+              opacity={level === 100 ? 0.6 : 0.3}
             />
           );
         })}
@@ -221,20 +242,19 @@ function MiniRadarChart({ dimensions }: { dimensions: { label: string; score: nu
           return (
             <Line
               key={index}
-              x1={MINI_RADAR_CENTER}
-              y1={MINI_RADAR_CENTER}
+              x1={RADAR_CENTER}
+              y1={RADAR_CENTER}
               x2={outerPoint.x}
               y2={outerPoint.y}
               stroke={Colors.border.light}
               strokeWidth={0.5}
-              opacity={0.4}
+              opacity={0.3}
             />
           );
         })}
         <Polygon
           points={polygonPoints}
-          fill={Colors.accent}
-          fillOpacity={0.15}
+          fill="url(#radarFill)"
           stroke={Colors.accent}
           strokeWidth={2}
         />
@@ -242,15 +262,45 @@ function MiniRadarChart({ dimensions }: { dimensions: { label: string; score: nu
           const point = getPoint(index, dim.score);
           return (
             <SvgCircle
-              key={index}
+              key={`dot-${index}`}
               cx={point.x}
               cy={point.y}
-              r={3}
+              r={4}
               fill={Colors.accent}
+              stroke="#0B1220"
+              strokeWidth={1.5}
             />
           );
         })}
       </Svg>
+      {dimensions.map((dim, index) => {
+        const pos = getLabelPos(index);
+        const isTop = pos.y < RADAR_CENTER;
+        const isLeft = pos.x < RADAR_CENTER * 0.4;
+        const isRight = pos.x > RADAR_CENTER * 1.6;
+        return (
+          <Text
+            key={`label-${index}`}
+            style={{
+              position: 'absolute',
+              left: pos.x,
+              top: pos.y,
+              transform: [
+                { translateX: isLeft ? -5 : isRight ? -45 : -25 },
+                { translateY: isTop ? -14 : 0 },
+              ],
+              fontSize: 10,
+              color: Colors.text.tertiary,
+              fontWeight: '500',
+              textAlign: 'center',
+              width: 55,
+            }}
+            numberOfLines={1}
+          >
+            {shortLabels[index]}
+          </Text>
+        );
+      })}
     </View>
   );
 }
@@ -442,20 +492,14 @@ export default function HomeScreen() {
 
         {assets.length > 0 && (
           <AnimatedCard delay={240} style={styles.card}>
-            <Text style={styles.cardTitle}>Risk Fingerprint</Text>
-            <View style={styles.radarRow}>
-              <MiniRadarChart dimensions={fingerprint.dimensions} />
-              <View style={styles.radarInfo}>
-                <Text style={styles.radarLabel}>{fingerprint.overallRiskLevel}</Text>
-                <Text style={styles.radarDetail} numberOfLines={2}>{fingerprint.interpretation}</Text>
-                {fingerprint.dimensions.slice(0, 3).map((dim) => (
-                  <View key={dim.label} style={styles.radarDimRow}>
-                    <Text style={styles.radarDimLabel}>{dim.label}</Text>
-                    <Text style={styles.radarDimScore}>{dim.score}</Text>
-                  </View>
-                ))}
+            <View style={styles.radarHeader}>
+              <Text style={styles.cardTitle}>Risk Fingerprint</Text>
+              <View style={styles.riskBadge}>
+                <Text style={styles.riskBadgeText}>{fingerprint.overallRiskLevel}</Text>
               </View>
             </View>
+            <MiniRadarChart dimensions={fingerprint.dimensions} />
+            <Text style={styles.radarInterpretation} numberOfLines={2}>{fingerprint.interpretation}</Text>
             <TouchableOpacity
               style={styles.ctaButton}
               onPress={() => router.push('/(tabs)/insights' as any)}
@@ -684,41 +728,29 @@ const styles = StyleSheet.create({
   donutWrapper: {
     marginLeft: spacing.md,
   },
-  radarRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: spacing.md,
-    gap: spacing.md,
-  },
-  radarInfo: {
-    flex: 1,
-  },
-  radarLabel: {
-    fontSize: 16,
-    fontWeight: '700',
-    color: Colors.text.primary,
-    marginBottom: 4,
-  },
-  radarDetail: {
-    fontSize: 12,
-    color: Colors.text.secondary,
-    marginBottom: spacing.sm,
-    lineHeight: 16,
-  },
-  radarDimRow: {
+  radarHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingVertical: 3,
+    marginBottom: spacing.sm,
   },
-  radarDimLabel: {
-    fontSize: 12,
-    color: Colors.text.secondary,
+  riskBadge: {
+    paddingHorizontal: 12,
+    paddingVertical: 5,
+    borderRadius: 12,
+    backgroundColor: Colors.accent + '20',
   },
-  radarDimScore: {
+  riskBadgeText: {
     fontSize: 12,
     fontWeight: '600',
     color: Colors.accent,
+  },
+  radarInterpretation: {
+    fontSize: 13,
+    color: Colors.text.secondary,
+    lineHeight: 18,
+    marginBottom: spacing.md,
+    textAlign: 'center',
   },
   ctaButton: {
     height: 48,
