@@ -1,46 +1,52 @@
 {
   "expo": {
-    "name": "InvestEase Portfolio App",
-    "slug": "invease-portfolio-app",
+    "name": "Assetra",
+    "slug": "assetra",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
-    "scheme": "rork-app",
-    "userInterfaceStyle": "automatic",
+    "scheme": "assetra",
+    "userInterfaceStyle": "dark",
     "newArchEnabled": true,
     "splash": {
       "image": "./assets/images/splash-icon.png",
       "resizeMode": "contain",
-      "backgroundColor": "#ffffff"
+      "backgroundColor": "#0B1220"
     },
     "ios": {
-      "supportsTablet": false,
-      "bundleIdentifier": "app.rork.invease-portfolio-app"
+      "supportsTablet": true,
+      "bundleIdentifier": "com.assetra.app"
     },
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/adaptive-icon.png",
-        "backgroundColor": "#ffffff"
+        "backgroundColor": "#0B1220"
       },
-      "package": "app.rork.invease_portfolio_app"
+      "package": "com.assetra.app"
     },
     "web": {
       "favicon": "./assets/images/favicon.png",
-      "output": "single",
+      "output": "static",
       "bundler": "metro"
     },
     "plugins": [
-      [
-        "expo-router",
-        {
-          "origin": "https://rork.com/"
-        }
-      ],
+      "expo-router",
+      "expo-secure-store",
+      "expo-local-authentication",
+      "expo-image-picker",
       "expo-font",
       "expo-web-browser"
     ],
     "experiments": {
       "typedRoutes": true
+    },
+    "extra": {
+      "router": {
+        "origin": false
+      },
+      "eas": {
+        "projectId": ""
+      }
     }
   }
 }

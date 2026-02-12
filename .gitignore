@@ -48,6 +48,10 @@ core
 .cache/
 bun.lockb
 
+# Google Play service account key
+play-store-service-account.json
+google-services.json
+
 # Replit
 .replit
 .local/
