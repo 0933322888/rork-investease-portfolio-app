@@ -33,9 +33,12 @@ export default function EditAssetScreen() {
   const [interestRate, setInterestRate] = useState('');
   const [isRented, setIsRented] = useState(false);
   const [monthlyRent, setMonthlyRent] = useState('');
+  const [monthlyIncome, setMonthlyIncome] = useState('');
+  const [dueDate, setDueDate] = useState('');
 
   const isCash = asset?.type === 'cash';
   const isRealEstate = asset?.type === 'real-estate';
+  const isFixedIncome = asset?.type === 'fixed-income';
 
   useEffect(() => {
     if (asset) {
@@ -48,6 +51,8 @@ export default function EditAssetScreen() {
       setInterestRate(asset.interestRate?.toString() || '');
       setIsRented(asset.isRented || false);
       setMonthlyRent(asset.monthlyRent?.toString() || '');
+      setMonthlyIncome(asset.monthlyIncome?.toString() || '');
+      setDueDate(asset.dueDate || '');
     }
   }, [asset]);
 
@@ -87,6 +92,15 @@ export default function EditAssetScreen() {
         isRented,
         monthlyRent: isRented && monthlyRent.trim() ? parseFloat(monthlyRent) : undefined,
       });
+    } else if (isFixedIncome) {
+      updateAsset(asset.id, {
+        name: name.trim() || asset.name,
+        quantity: 1,
+        purchasePrice: 0,
+        currentPrice: 0,
+        monthlyIncome: monthlyIncome.trim() ? parseFloat(monthlyIncome) : undefined,
+        dueDate: dueDate.trim() || undefined,
+      });
     } else {
       updateAsset(asset.id, {
         name: name.trim() || asset.name,
@@ -108,7 +122,10 @@ export default function EditAssetScreen() {
       if (isRented) return baseValid && monthlyRent.trim() !== '' && !isNaN(parseFloat(monthlyRent));
       return baseValid;
     }
-    return !isNaN(parseFloat(purchasePrice)) && (asset.type === 'real-estate' || !isNaN(parseFloat(quantity)));
+    if (isFixedIncome) {
+      return monthlyIncome.trim() !== '' && !isNaN(parseFloat(monthlyIncome)) && dueDate.trim() !== '';
+    }
+    return !isNaN(parseFloat(purchasePrice)) && !isNaN(parseFloat(quantity));
   })();
 
   return (
@@ -251,6 +268,31 @@ export default function EditAssetScreen() {
                     />
                   </View>
                 )}
+              </>
+            ) : isFixedIncome ? (
+              <>
+                <View style={styles.inputGroup}>
+                  <Text style={styles.label}>Monthly Income (USD)</Text>
+                  <TextInput
+                    style={styles.input}
+                    value={monthlyIncome}
+                    onChangeText={setMonthlyIncome}
+                    placeholder="500.00"
+                    placeholderTextColor={Colors.text.tertiary}
+                    keyboardType="decimal-pad"
+                  />
+                </View>
+
+                <View style={styles.inputGroup}>
+                  <Text style={styles.label}>Due Date</Text>
+                  <TextInput
+                    style={styles.input}
+                    value={dueDate}
+                    onChangeText={setDueDate}
+                    placeholder="2030-12-31"
+                    placeholderTextColor={Colors.text.tertiary}
+                  />
+                </View>
               </>
             ) : (
               <>

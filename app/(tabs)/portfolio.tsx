@@ -130,6 +130,11 @@ function AssetItem({ asset, onEdit, onDelete, quote }: AssetItemProps) {
                 ${asset.monthlyRent.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}/mo
               </Text>
             )}
+            {asset.type === 'fixed-income' && asset.monthlyIncome !== undefined && asset.monthlyIncome > 0 && (
+              <Text style={styles.assetMarketPrice}>
+                ${asset.monthlyIncome.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}/mo
+              </Text>
+            )}
           </View>
         </View>
       </View>
