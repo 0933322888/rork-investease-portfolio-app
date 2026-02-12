@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useRef } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Dimensions } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Dimensions, Modal, Pressable } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Lock, TrendingUp, Globe, PieChart, Sparkles, Wand2, ChevronRight, AlertTriangle, ShieldCheck, BarChart3, Radar } from 'lucide-react-native';
+import { Lock, TrendingUp, Globe, PieChart, Sparkles, Wand2, ChevronRight, AlertTriangle, ShieldCheck, BarChart3, Radar, X } from 'lucide-react-native';
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
@@ -266,19 +266,12 @@ function InsightCard({ icon, title, value, subtitle, color, index, refreshKey }:
 }
 
 function PremiumInsights() {
-  const { refreshKey, registerScrollHandler } = useInsightsRefresh();
+  const { refreshKey, showRecommendations, setShowRecommendations } = useInsightsRefresh();
   const scrollRef = useRef<ScrollView>(null);
-  const recsYRef = useRef(0);
   const headerGlow = useSharedValue(0);
   const isFirst = useRef(true);
   const { assets } = usePortfolio();
   const fingerprint = useMemo(() => calculateRiskFingerprint(assets), [assets]);
-
-  useEffect(() => {
-    registerScrollHandler(() => {
-      scrollRef.current?.scrollTo({ y: recsYRef.current, animated: true });
-    });
-  }, [registerScrollHandler]);
 
   useEffect(() => {
     if (isFirst.current) {
@@ -547,51 +540,74 @@ function PremiumInsights() {
           )}
         </View>
 
-        <View
-          style={styles.sectionHeader}
-          onLayout={(e) => { recsYRef.current = e.nativeEvent.layout.y; }}
+        <Modal
+          visible={showRecommendations}
+          animationType="slide"
+          transparent={true}
+          onRequestClose={() => setShowRecommendations(false)}
         >
-          <ShieldCheck size={18} color={Colors.text.secondary} strokeWidth={2} />
-          <Text style={styles.sectionTitle}>Recommendations</Text>
-        </View>
-        <View style={styles.recommendationsCard}>
-          {uniqueTypes < 3 && (
-            <View style={styles.recommendationItem}>
-              <View style={[styles.recDot, { backgroundColor: '#F5B14C' }]} />
-              <View style={styles.recContent}>
-                <Text style={styles.recTitle}>Diversify your portfolio</Text>
-                <Text style={styles.recDesc}>Consider adding {uniqueTypes < 2 ? 'crypto, real estate, or cash' : 'additional asset types'} to reduce risk</Text>
+          <Pressable style={styles.modalOverlay} onPress={() => setShowRecommendations(false)}>
+            <Pressable style={styles.modalContent} onPress={(e) => e.stopPropagation()}>
+              <View style={styles.modalHandle} />
+              <View style={styles.modalHeader}>
+                <View style={styles.modalHeaderLeft}>
+                  <Wand2 size={20} color={Colors.accent} strokeWidth={2} />
+                  <Text style={styles.modalTitle}>Recommendations</Text>
+                </View>
+                <TouchableOpacity onPress={() => setShowRecommendations(false)} hitSlop={12}>
+                  <X size={20} color={Colors.text.secondary} />
+                </TouchableOpacity>
               </View>
-            </View>
-          )}
-          {Number(concentrationPct) > 70 && (
-            <View style={styles.recommendationItem}>
-              <View style={[styles.recDot, { backgroundColor: '#FF6B6B' }]} />
-              <View style={styles.recContent}>
-                <Text style={styles.recTitle}>High concentration risk</Text>
-                <Text style={styles.recDesc}>{concentrationPct}% of your portfolio is in {typeLabels[topType?.[0] || ''] || 'one asset type'}. Consider rebalancing.</Text>
-              </View>
-            </View>
-          )}
-          {Number(concentrationPct) <= 70 && uniqueTypes >= 3 && (
-            <View style={styles.recommendationItem}>
-              <View style={[styles.recDot, { backgroundColor: '#32D583' }]} />
-              <View style={styles.recContent}>
-                <Text style={styles.recTitle}>Well-balanced portfolio</Text>
-                <Text style={styles.recDesc}>Your allocation looks healthy with good diversification across {uniqueTypes} asset types</Text>
-              </View>
-            </View>
-          )}
-          {assets.length === 0 && (
-            <View style={styles.recommendationItem}>
-              <View style={[styles.recDot, { backgroundColor: '#6C8CFF' }]} />
-              <View style={styles.recContent}>
-                <Text style={styles.recTitle}>Get started</Text>
-                <Text style={styles.recDesc}>Add your first asset to start getting personalized insights</Text>
-              </View>
-            </View>
-          )}
-        </View>
+              <ScrollView style={styles.modalScroll} showsVerticalScrollIndicator={false}>
+                {uniqueTypes < 3 && (
+                  <View style={styles.recommendationItem}>
+                    <View style={[styles.recDot, { backgroundColor: '#F5B14C' }]} />
+                    <View style={styles.recContent}>
+                      <Text style={styles.recTitle}>Diversify your portfolio</Text>
+                      <Text style={styles.recDesc}>Consider adding {uniqueTypes < 2 ? 'crypto, real estate, or cash' : 'additional asset types'} to reduce risk</Text>
+                    </View>
+                  </View>
+                )}
+                {Number(concentrationPct) > 70 && (
+                  <View style={styles.recommendationItem}>
+                    <View style={[styles.recDot, { backgroundColor: '#FF6B6B' }]} />
+                    <View style={styles.recContent}>
+                      <Text style={styles.recTitle}>High concentration risk</Text>
+                      <Text style={styles.recDesc}>{concentrationPct}% of your portfolio is in {typeLabels[topType?.[0] || ''] || 'one asset type'}. Consider rebalancing.</Text>
+                    </View>
+                  </View>
+                )}
+                {Number(concentrationPct) <= 70 && uniqueTypes >= 3 && (
+                  <View style={styles.recommendationItem}>
+                    <View style={[styles.recDot, { backgroundColor: '#32D583' }]} />
+                    <View style={styles.recContent}>
+                      <Text style={styles.recTitle}>Well-balanced portfolio</Text>
+                      <Text style={styles.recDesc}>Your allocation looks healthy with good diversification across {uniqueTypes} asset types</Text>
+                    </View>
+                  </View>
+                )}
+                {assets.length === 0 && (
+                  <View style={styles.recommendationItem}>
+                    <View style={[styles.recDot, { backgroundColor: '#6C8CFF' }]} />
+                    <View style={styles.recContent}>
+                      <Text style={styles.recTitle}>Get started</Text>
+                      <Text style={styles.recDesc}>Add your first asset to start getting personalized insights</Text>
+                    </View>
+                  </View>
+                )}
+                {assets.length > 0 && uniqueTypes >= 3 && Number(concentrationPct) <= 70 && (
+                  <View style={styles.recommendationItem}>
+                    <View style={[styles.recDot, { backgroundColor: Colors.accent }]} />
+                    <View style={styles.recContent}>
+                      <Text style={styles.recTitle}>Keep it up</Text>
+                      <Text style={styles.recDesc}>Your portfolio is well-structured. Consider periodic rebalancing to maintain your target allocation.</Text>
+                    </View>
+                  </View>
+                )}
+              </ScrollView>
+            </Pressable>
+          </Pressable>
+        </Modal>
 
         <View style={styles.sectionHeader}>
           <Radar size={18} color={Colors.text.secondary} strokeWidth={2} />
@@ -1173,6 +1189,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'flex-start',
     gap: spacing.md,
+    marginBottom: spacing.md,
   },
   recDot: {
     width: 8,
@@ -1192,6 +1209,47 @@ const styles = StyleSheet.create({
   recDesc: {
     ...typography.footnote,
     color: Colors.text.secondary,
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.6)',
+    justifyContent: 'flex-end',
+  },
+  modalContent: {
+    backgroundColor: Colors.card,
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+    paddingHorizontal: spacing.lg,
+    paddingBottom: 40,
+    maxHeight: '70%',
+  },
+  modalHandle: {
+    width: 36,
+    height: 4,
+    borderRadius: 2,
+    backgroundColor: Colors.border.light,
+    alignSelf: 'center',
+    marginTop: spacing.sm,
+    marginBottom: spacing.md,
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: spacing.lg,
+  },
+  modalHeaderLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+  },
+  modalTitle: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: Colors.text.primary,
+  },
+  modalScroll: {
+    gap: spacing.md,
   },
   radarContainer: {
     width: CHART_SIZE,

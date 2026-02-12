@@ -20,9 +20,9 @@ type ActiveTab = "home" | "portfolio" | "insights" | "settings" | string;
 const InsightsRefreshContext = createContext<{
   refreshKey: number;
   triggerRefresh: () => void;
-  scrollToRecommendations: () => void;
-  registerScrollHandler: (handler: () => void) => void;
-}>({ refreshKey: 0, triggerRefresh: () => {}, scrollToRecommendations: () => {}, registerScrollHandler: () => {} });
+  showRecommendations: boolean;
+  setShowRecommendations: (v: boolean) => void;
+}>({ refreshKey: 0, triggerRefresh: () => {}, showRecommendations: false, setShowRecommendations: () => {} });
 
 export function useInsightsRefresh() {
   return useContext(InsightsRefreshContext);
@@ -105,19 +105,11 @@ export default function TabLayout() {
   const { refreshMarketPrices, isRefreshingPrices } = usePortfolio();
   const { isPremium } = useSubscription();
   const [insightsRefreshKey, setInsightsRefreshKey] = useState(0);
+  const [showRecommendations, setShowRecommendations] = useState(false);
   const centerButtonRef = useRef<CenterButtonHandle>(null);
-  const scrollToRecsRef = useRef<(() => void) | null>(null);
 
   const triggerInsightsRefresh = useCallback(() => {
     setInsightsRefreshKey((k) => k + 1);
-  }, []);
-
-  const scrollToRecommendations = useCallback(() => {
-    scrollToRecsRef.current?.();
-  }, []);
-
-  const registerScrollHandler = useCallback((handler: () => void) => {
-    scrollToRecsRef.current = handler;
   }, []);
 
   let activeTab: ActiveTab = "home";
@@ -127,7 +119,7 @@ export default function TabLayout() {
 
   return (
     <InsightsRefreshContext.Provider
-      value={{ refreshKey: insightsRefreshKey, triggerRefresh: triggerInsightsRefresh, scrollToRecommendations, registerScrollHandler }}
+      value={{ refreshKey: insightsRefreshKey, triggerRefresh: triggerInsightsRefresh, showRecommendations, setShowRecommendations }}
     >
       <Tabs
         sceneContainerStyle={{ backgroundColor: 'transparent' }}
@@ -189,7 +181,7 @@ export default function TabLayout() {
                 navigation.navigate('add-asset');
               } else if (activeTab === "insights") {
                 if (isPremium) {
-                  scrollToRecommendations();
+                  setShowRecommendations(true);
                 } else {
                   router.push('/premium' as any);
                 }
