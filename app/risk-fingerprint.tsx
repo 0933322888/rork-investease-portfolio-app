@@ -8,6 +8,7 @@ import Colors from '@/constants/colors';
 import { spacing, borderRadius } from '@/constants/spacing';
 import { typography } from '@/constants/typography';
 import { usePortfolio } from '@/contexts/PortfolioContext';
+import { useSubscription } from '@/contexts/SubscriptionContext';
 import { calculateRiskFingerprint, RiskDimension } from '@/utils/riskFingerprint';
 
 const { width } = Dimensions.get('window');
@@ -169,6 +170,7 @@ function RiskRadarChart({ dimensions }: { dimensions: RiskDimension[] }) {
 
 export default function RiskFingerprintScreen() {
   const { assets } = usePortfolio();
+  const { isPremium } = useSubscription();
   const fingerprint = useMemo(() => calculateRiskFingerprint(assets), [assets]);
 
   return (
@@ -210,18 +212,20 @@ export default function RiskFingerprintScreen() {
           </View>
         )}
 
-        <View style={styles.premiumCard}>
-          <View style={styles.premiumHeader}>
-            <Lock size={20} color={Colors.accent} strokeWidth={2} />
-            <Text style={styles.premiumTitle}>Unlock Detailed Analysis</Text>
+        {!isPremium && (
+          <View style={styles.premiumCard}>
+            <View style={styles.premiumHeader}>
+              <Lock size={20} color={Colors.accent} strokeWidth={2} />
+              <Text style={styles.premiumTitle}>Unlock Detailed Analysis</Text>
+            </View>
+            <Text style={styles.premiumDescription}>
+              Get deeper insights into each risk dimension, historical comparisons, and personalized recommendations
+            </Text>
+            <TouchableOpacity style={styles.premiumButton} activeOpacity={0.8} onPress={() => router.push('/premium' as any)}>
+              <Text style={styles.premiumButtonText}>Upgrade to Premium</Text>
+            </TouchableOpacity>
           </View>
-          <Text style={styles.premiumDescription}>
-            Get deeper insights into each risk dimension, historical comparisons, and personalized recommendations
-          </Text>
-          <TouchableOpacity style={styles.premiumButton} activeOpacity={0.8}>
-            <Text style={styles.premiumButtonText}>Upgrade to Premium</Text>
-          </TouchableOpacity>
-        </View>
+        )}
 
         <View style={styles.dimensionsCard}>
           <Text style={styles.sectionTitle}>Risk Dimensions</Text>
@@ -268,7 +272,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: spacing.md,
-    paddingVertical: spacing.md,
+    paddingTop: spacing.xl,
+    paddingBottom: spacing.md,
     borderBottomWidth: 1,
     borderBottomColor: Colors.border.light,
   },
