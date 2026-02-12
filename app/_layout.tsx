@@ -85,6 +85,7 @@ function RootLayoutNav() {
         <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
         <Stack.Screen name="sso-callback" options={{ headerShown: false }} />
         <Stack.Screen name="add-asset" options={{ presentation: "modal", headerShown: false }} />
+        <Stack.Screen name="edit-asset" options={{ presentation: "modal", headerShown: false }} />
         <Stack.Screen name="risk-fingerprint" options={{ presentation: "modal", headerShown: false }} />
         <Stack.Screen name="connect-plaid" options={{ presentation: "modal", title: "Connect Account" }} />
         <Stack.Screen name="connect-snaptrade" options={{ presentation: "modal", headerShown: false }} />

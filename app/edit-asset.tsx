@@ -131,6 +131,11 @@ export default function EditAssetScreen() {
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
       <View style={styles.header}>
+        <TouchableOpacity onPress={() => router.back()} style={styles.closeButton}>
+          <X size={24} color={Colors.text.primary} />
+        </TouchableOpacity>
+        <Text style={styles.headerTitle}>Edit Asset</Text>
+        <View style={{ width: 40 }} />
       </View>
 
       <KeyboardAvoidingView
