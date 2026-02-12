@@ -266,12 +266,19 @@ function InsightCard({ icon, title, value, subtitle, color, index, refreshKey }:
 }
 
 function PremiumInsights() {
-  const { refreshKey } = useInsightsRefresh();
+  const { refreshKey, registerScrollHandler } = useInsightsRefresh();
   const scrollRef = useRef<ScrollView>(null);
+  const recsYRef = useRef(0);
   const headerGlow = useSharedValue(0);
   const isFirst = useRef(true);
   const { assets } = usePortfolio();
   const fingerprint = useMemo(() => calculateRiskFingerprint(assets), [assets]);
+
+  useEffect(() => {
+    registerScrollHandler(() => {
+      scrollRef.current?.scrollTo({ y: recsYRef.current, animated: true });
+    });
+  }, [registerScrollHandler]);
 
   useEffect(() => {
     if (isFirst.current) {
@@ -540,7 +547,10 @@ function PremiumInsights() {
           )}
         </View>
 
-        <View style={styles.sectionHeader}>
+        <View
+          style={styles.sectionHeader}
+          onLayout={(e) => { recsYRef.current = e.nativeEvent.layout.y; }}
+        >
           <ShieldCheck size={18} color={Colors.text.secondary} strokeWidth={2} />
           <Text style={styles.sectionTitle}>Recommendations</Text>
         </View>

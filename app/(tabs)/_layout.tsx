@@ -1,5 +1,5 @@
-import { Tabs, usePathname } from "expo-router";
-import { Home, Layers, Plus, Sparkles, Settings, RefreshCw, Wand2, HelpCircle } from "lucide-react-native";
+import { Tabs, usePathname, router } from "expo-router";
+import { Home, Layers, Plus, Sparkles, Settings, RefreshCw, Wand2, HelpCircle, Lock } from "lucide-react-native";
 import React, { useEffect, useRef, createContext, useContext, useState, useCallback, useImperativeHandle, forwardRef } from "react";
 import { View, StyleSheet, Alert, Linking } from "react-native";
 import Animated, {
@@ -13,26 +13,31 @@ import Animated, {
 
 import Colors from "@/constants/colors";
 import { usePortfolio } from "@/contexts/PortfolioContext";
+import { useSubscription } from "@/contexts/SubscriptionContext";
 
 type ActiveTab = "home" | "portfolio" | "insights" | "settings" | string;
 
 const InsightsRefreshContext = createContext<{
   refreshKey: number;
   triggerRefresh: () => void;
-}>({ refreshKey: 0, triggerRefresh: () => {} });
+  scrollToRecommendations: () => void;
+  registerScrollHandler: (handler: () => void) => void;
+}>({ refreshKey: 0, triggerRefresh: () => {}, scrollToRecommendations: () => {}, registerScrollHandler: () => {} });
 
 export function useInsightsRefresh() {
   return useContext(InsightsRefreshContext);
 }
 
-function getIconForTab(tab: ActiveTab) {
+function getIconForTab(tab: ActiveTab, isPremium?: boolean) {
   switch (tab) {
     case "home":
       return <RefreshCw size={24} color="#FFFFFF" strokeWidth={2.5} />;
     case "portfolio":
       return <Plus size={24} color="#FFFFFF" strokeWidth={2.5} />;
     case "insights":
-      return <Wand2 size={24} color="#FFFFFF" strokeWidth={2.5} />;
+      return isPremium
+        ? <Wand2 size={24} color="#FFFFFF" strokeWidth={2.5} />
+        : <Lock size={22} color="rgba(255,255,255,0.5)" strokeWidth={2.5} />;
     case "settings":
       return <HelpCircle size={24} color="#FFFFFF" strokeWidth={2.5} />;
     default:
@@ -44,8 +49,8 @@ interface CenterButtonHandle {
   spin: () => void;
 }
 
-const CenterButton = forwardRef<CenterButtonHandle, { activeTab: ActiveTab }>(
-  ({ activeTab }, ref) => {
+const CenterButton = forwardRef<CenterButtonHandle, { activeTab: ActiveTab; isPremium?: boolean }>(
+  ({ activeTab, isPremium }, ref) => {
     const scale = useSharedValue(1);
     const rotate = useSharedValue(0);
     const spinRotate = useSharedValue(0);
@@ -83,10 +88,12 @@ const CenterButton = forwardRef<CenterButtonHandle, { activeTab: ActiveTab }>(
       ],
     }));
 
+    const isDisabled = activeTab === "insights" && !isPremium;
+
     return (
-      <View style={styles.addButton}>
+      <View style={[styles.addButton, isDisabled && styles.addButtonDisabled]}>
         <Animated.View style={animatedIconStyle}>
-          {getIconForTab(activeTab)}
+          {getIconForTab(activeTab, isPremium)}
         </Animated.View>
       </View>
     );
@@ -96,11 +103,21 @@ const CenterButton = forwardRef<CenterButtonHandle, { activeTab: ActiveTab }>(
 export default function TabLayout() {
   const pathname = usePathname();
   const { refreshMarketPrices, isRefreshingPrices } = usePortfolio();
+  const { isPremium } = useSubscription();
   const [insightsRefreshKey, setInsightsRefreshKey] = useState(0);
   const centerButtonRef = useRef<CenterButtonHandle>(null);
+  const scrollToRecsRef = useRef<(() => void) | null>(null);
 
   const triggerInsightsRefresh = useCallback(() => {
     setInsightsRefreshKey((k) => k + 1);
+  }, []);
+
+  const scrollToRecommendations = useCallback(() => {
+    scrollToRecsRef.current?.();
+  }, []);
+
+  const registerScrollHandler = useCallback((handler: () => void) => {
+    scrollToRecsRef.current = handler;
   }, []);
 
   let activeTab: ActiveTab = "home";
@@ -110,7 +127,7 @@ export default function TabLayout() {
 
   return (
     <InsightsRefreshContext.Provider
-      value={{ refreshKey: insightsRefreshKey, triggerRefresh: triggerInsightsRefresh }}
+      value={{ refreshKey: insightsRefreshKey, triggerRefresh: triggerInsightsRefresh, scrollToRecommendations, registerScrollHandler }}
     >
       <Tabs
         sceneContainerStyle={{ backgroundColor: 'transparent' }}
@@ -157,7 +174,7 @@ export default function TabLayout() {
           name="add"
           options={{
             title: "",
-            tabBarIcon: () => <CenterButton ref={centerButtonRef} activeTab={activeTab} />,
+            tabBarIcon: () => <CenterButton ref={centerButtonRef} activeTab={activeTab} isPremium={isPremium} />,
             tabBarLabel: () => null,
           }}
           listeners={({ navigation }) => ({
@@ -171,7 +188,11 @@ export default function TabLayout() {
               } else if (activeTab === "portfolio") {
                 navigation.navigate('add-asset');
               } else if (activeTab === "insights") {
-                triggerInsightsRefresh();
+                if (isPremium) {
+                  scrollToRecommendations();
+                } else {
+                  router.push('/premium' as any);
+                }
               } else if (activeTab === "settings") {
                 Alert.alert(
                   "Help & Support",
@@ -231,5 +252,9 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.4,
     shadowRadius: 12,
     elevation: 10,
+  },
+  addButtonDisabled: {
+    backgroundColor: Colors.text.tertiary,
+    shadowOpacity: 0.15,
   },
 });
