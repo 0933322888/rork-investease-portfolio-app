@@ -31,7 +31,7 @@ if (Platform.OS !== "web") {
 const publishableKey = process.env.EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY || "";
 
 export default function ClerkProvider({ children }: { children: React.ReactNode }) {
-  if (!publishableKey) {
+  if (!publishableKey || Platform.OS === 'web') {
     return <>{children}</>;
   }
 
