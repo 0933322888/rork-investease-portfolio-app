@@ -42,8 +42,7 @@
       "expo-local-authentication",
       "expo-image-picker",
       "expo-font",
-      "expo-web-browser",
-      "react-native-purchases"
+      "expo-web-browser"
     ],
     "experiments": {
       "typedRoutes": true
