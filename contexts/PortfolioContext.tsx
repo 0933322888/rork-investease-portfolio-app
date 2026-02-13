@@ -659,14 +659,22 @@ export const [PortfolioProvider, usePortfolio] = createContextHook(() => {
         assetType: a.type,
       }));
 
-      const response = await fetch(
-        `/api/trpc/marketData.getMarketData?input=${encodeURIComponent(
-          JSON.stringify({ json: { assets: marketRequests } })
-        )}`
-      );
+      const url = `/api/trpc/marketData.getMarketData?input=${encodeURIComponent(
+        JSON.stringify({ json: { assets: marketRequests } })
+      )}`;
+      
+      console.log('[Portfolio] Fetching market data from:', url);
+      
+      const response = await fetch(url, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
 
       if (!response.ok) {
-        console.warn('[Portfolio] Market price fetch failed:', response.status, response.statusText);
+        const errorText = await response.text().catch(() => 'Unable to read error');
+        console.warn('[Portfolio] Market price fetch failed:', response.status, response.statusText, errorText);
         return;
       }
 

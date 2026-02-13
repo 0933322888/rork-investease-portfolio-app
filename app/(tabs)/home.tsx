@@ -126,9 +126,7 @@ function DonutChart({ data, size = 140 }: { data: { percentage: number; color: s
             strokeDasharray={`${dash} ${gap}`}
             strokeDashoffset={offset}
             strokeLinecap="butt"
-            rotation={-90}
-            originX={cx}
-            originY={cy}
+            transform={`rotate(-90 ${cx} ${cy})`}
           />
         );
       })}
