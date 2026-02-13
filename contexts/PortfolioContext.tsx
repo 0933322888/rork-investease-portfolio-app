@@ -764,14 +764,18 @@ export const [PortfolioProvider, usePortfolio] = createContextHook(() => {
   useEffect(() => {
     if (assets.length > 0 && !hasRefreshedRef.current) {
       hasRefreshedRef.current = true;
-      refreshMarketPrices();
+      refreshMarketPrices().catch((error) => {
+        console.error('[Portfolio] Failed to refresh market prices on init:', error);
+      });
     }
   }, [assets, refreshMarketPrices]);
 
   useEffect(() => {
     if (assets.length > 0 && !hasLoadedSparklinesRef.current) {
       hasLoadedSparklinesRef.current = true;
-      fetchSparklineData();
+      fetchSparklineData().catch((error) => {
+        console.error('[Portfolio] Failed to load sparkline data on init:', error);
+      });
     }
   }, [assets, fetchSparklineData]);
 
