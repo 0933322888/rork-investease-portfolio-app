@@ -10,11 +10,17 @@ try {
 
 let Purchases: any = null;
 let LOG_LEVEL: any = null;
-try {
-  const rc = require("react-native-purchases");
-  Purchases = rc.default;
-  LOG_LEVEL = rc.LOG_LEVEL;
-} catch {}
+if (Platform.OS !== 'web') {
+  try {
+    const rc = require("react-native-purchases");
+    if (rc?.default?.configure) {
+      Purchases = rc.default;
+      LOG_LEVEL = rc.LOG_LEVEL;
+    }
+  } catch (e) {
+    console.log("[RevenueCat] Native module not available, using DB fallback");
+  }
+}
 
 const REVENUECAT_API_KEY = process.env.EXPO_PUBLIC_REVENUECAT_API_KEY || '';
 const ENTITLEMENT_ID = 'premium';
@@ -50,17 +56,17 @@ export function SubscriptionContext({ children }: { children: React.ReactNode })
   const [isRestoring, setIsRestoring] = useState(false);
   const [rcPremium, setRcPremium] = useState(false);
   const [rcLoading, setRcLoading] = useState(true);
+  const [rcInitialized, setRcInitialized] = useState(false);
   const [offerings, setOfferings] = useState<any>(null);
 
   const auth = useAuthHook?.();
   const isSignedIn = auth?.isSignedIn ?? false;
   const userId = auth?.userId;
 
-  const isNative = Platform.OS !== 'web';
-  const rcAvailable = isNative && Purchases && REVENUECAT_API_KEY;
+  const rcAvailable = Platform.OS !== 'web' && Purchases !== null && !!REVENUECAT_API_KEY;
 
   const statusQuery = trpc.auth.getSubscriptionStatus.useQuery(undefined, {
-    enabled: isSignedIn && !rcAvailable,
+    enabled: isSignedIn,
     retry: false,
     refetchOnWindowFocus: false,
   });
@@ -86,17 +92,23 @@ export function SubscriptionContext({ children }: { children: React.ReactNode })
           apiKey: REVENUECAT_API_KEY,
           appUserID: userId || undefined,
         });
+        setRcInitialized(true);
 
         const customerInfo = await Purchases.getCustomerInfo();
-        const hasPremium = customerInfo.entitlements.active[ENTITLEMENT_ID] !== undefined;
+        const hasPremium = customerInfo?.entitlements?.active?.[ENTITLEMENT_ID] !== undefined;
         setRcPremium(hasPremium);
 
-        const offeringsResult = await Purchases.getOfferings();
-        if (offeringsResult.current) {
-          setOfferings(offeringsResult.current);
+        try {
+          const offeringsResult = await Purchases.getOfferings();
+          if (offeringsResult?.current) {
+            setOfferings(offeringsResult.current);
+          }
+        } catch (offerErr) {
+          console.warn("[RevenueCat] Offerings fetch failed:", offerErr);
         }
       } catch (err) {
         console.error("[RevenueCat] Init error:", err);
+        setRcInitialized(false);
       } finally {
         setRcLoading(false);
       }
@@ -106,10 +118,10 @@ export function SubscriptionContext({ children }: { children: React.ReactNode })
   }, [rcAvailable, userId]);
 
   const checkRcEntitlements = useCallback(async () => {
-    if (!rcAvailable) return;
+    if (!rcAvailable || !rcInitialized) return;
     try {
       const customerInfo = await Purchases.getCustomerInfo();
-      const hasPremium = customerInfo.entitlements.active[ENTITLEMENT_ID] !== undefined;
+      const hasPremium = customerInfo?.entitlements?.active?.[ENTITLEMENT_ID] !== undefined;
       setRcPremium(hasPremium);
       if (hasPremium) {
         updateMutation.mutateAsync({ status: "premium" }).catch(() => {});
@@ -117,18 +129,20 @@ export function SubscriptionContext({ children }: { children: React.ReactNode })
     } catch (err) {
       console.error("[RevenueCat] Check entitlements error:", err);
     }
-  }, [rcAvailable, updateMutation]);
+  }, [rcAvailable, rcInitialized, updateMutation]);
 
-  const isPremium = rcAvailable
+  const useRc = rcAvailable && rcInitialized;
+
+  const isPremium = useRc
     ? rcPremium
     : (statusQuery.data?.status === "premium");
 
-  const isLoading = rcAvailable
+  const isLoading = useRc
     ? rcLoading
     : (isSignedIn ? statusQuery.isLoading : false);
 
   const purchase = useCallback(async () => {
-    if (rcAvailable) {
+    if (useRc) {
       setIsPurchasing(true);
       try {
         if (!offerings || !offerings.availablePackages?.length) {
@@ -138,7 +152,7 @@ export function SubscriptionContext({ children }: { children: React.ReactNode })
 
         const pkg = offerings.availablePackages[0];
         const { customerInfo } = await Purchases.purchasePackage(pkg);
-        const hasPremium = customerInfo.entitlements.active[ENTITLEMENT_ID] !== undefined;
+        const hasPremium = customerInfo?.entitlements?.active?.[ENTITLEMENT_ID] !== undefined;
         setRcPremium(hasPremium);
 
         if (hasPremium) {
@@ -147,7 +161,7 @@ export function SubscriptionContext({ children }: { children: React.ReactNode })
 
         return hasPremium;
       } catch (err: any) {
-        if (err.userCancelled) {
+        if (err?.userCancelled) {
           return false;
         }
         console.error("[RevenueCat] Purchase error:", err);
@@ -167,14 +181,14 @@ export function SubscriptionContext({ children }: { children: React.ReactNode })
     } finally {
       setIsPurchasing(false);
     }
-  }, [rcAvailable, offerings, updateMutation]);
+  }, [useRc, offerings, updateMutation]);
 
   const restore = useCallback(async () => {
-    if (rcAvailable) {
+    if (useRc) {
       setIsRestoring(true);
       try {
         const customerInfo = await Purchases.restorePurchases();
-        const hasPremium = customerInfo.entitlements.active[ENTITLEMENT_ID] !== undefined;
+        const hasPremium = customerInfo?.entitlements?.active?.[ENTITLEMENT_ID] !== undefined;
         setRcPremium(hasPremium);
 
         if (hasPremium) {
@@ -192,15 +206,15 @@ export function SubscriptionContext({ children }: { children: React.ReactNode })
 
     const result = await statusQuery.refetch();
     return result.data?.status === "premium";
-  }, [rcAvailable, statusQuery, updateMutation]);
+  }, [useRc, statusQuery, updateMutation]);
 
   const refetch = useCallback(() => {
-    if (rcAvailable) {
+    if (useRc) {
       checkRcEntitlements();
     } else {
       statusQuery.refetch();
     }
-  }, [rcAvailable, checkRcEntitlements, statusQuery]);
+  }, [useRc, checkRcEntitlements, statusQuery]);
 
   return (
     <SubscriptionCtx.Provider
