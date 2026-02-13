@@ -59,7 +59,12 @@ export function SubscriptionContext({ children }: { children: React.ReactNode })
   const [rcInitialized, setRcInitialized] = useState(false);
   const [offerings, setOfferings] = useState<any>(null);
 
-  const auth = useAuthHook?.();
+  let auth = null;
+  try {
+    auth = useAuthHook?.();
+  } catch (error) {
+    console.log("[SubscriptionContext] Clerk not available");
+  }
   const isSignedIn = auth?.isSignedIn ?? false;
   const userId = auth?.userId;
 
