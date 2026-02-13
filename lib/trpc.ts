@@ -12,11 +12,11 @@ const getBaseUrl = () => {
     return url;
   }
 
-  if (typeof window !== "undefined") {
+  if (typeof window !== "undefined" && window.location?.origin && window.location.origin !== "null") {
     return window.location.origin;
   }
 
-  return "http://localhost:3001";
+  return "";
 };
 
 let clerkTokenGetter: (() => Promise<string | null>) | null = null;

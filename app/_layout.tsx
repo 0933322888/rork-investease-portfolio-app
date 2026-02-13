@@ -10,6 +10,7 @@ import { trpc, trpcClient, setClerkTokenGetter } from "@/lib/trpc";
 import ClerkProvider from "@/providers/ClerkProvider";
 import { useAppLock } from "@/hooks/useAppLock";
 import AppLockOverlay from "@/components/AppLockOverlay";
+import ErrorBoundary from "@/components/ErrorBoundary";
 
 SplashScreen.preventAutoHideAsync();
 
@@ -99,20 +100,22 @@ function RootLayoutNav() {
 
 export default function RootLayout() {
   return (
-    <ClerkProvider>
-      <trpc.Provider client={trpcClient} queryClient={queryClient}>
-        <QueryClientProvider client={queryClient}>
-          <SafeAreaProvider>
-            <SubscriptionContext>
-              <PortfolioProvider>
-                <GestureHandlerRootView>
-                  <RootLayoutNav />
-                </GestureHandlerRootView>
-              </PortfolioProvider>
-            </SubscriptionContext>
-          </SafeAreaProvider>
-        </QueryClientProvider>
-      </trpc.Provider>
-    </ClerkProvider>
+    <ErrorBoundary>
+      <ClerkProvider>
+        <trpc.Provider client={trpcClient} queryClient={queryClient}>
+          <QueryClientProvider client={queryClient}>
+            <SafeAreaProvider>
+              <SubscriptionContext>
+                <PortfolioProvider>
+                  <GestureHandlerRootView>
+                    <RootLayoutNav />
+                  </GestureHandlerRootView>
+                </PortfolioProvider>
+              </SubscriptionContext>
+            </SafeAreaProvider>
+          </QueryClientProvider>
+        </trpc.Provider>
+      </ClerkProvider>
+    </ErrorBoundary>
   );
 }
